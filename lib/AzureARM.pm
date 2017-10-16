@@ -73,8 +73,8 @@ startrule: '[' functioncall ']'
  { $return = $item{ functioncall } }
 functioncall: functionname '(' parameter(s? /,/) ')'
  { $return = AzureARM::Expression::Function->new(Parameters => $item{'parameter(s?)'}, Function => $item{ functionname }) }
-stringliteral: /'[^']+'/
- { $return = AzureARM::Expression::String->new(Value => $item{ __PATTERN1__ } ) }
+stringliteral: /'/ /[^']+/ /'/
+ { $return = AzureARM::Expression::String->new(Value => $item{ __PATTERN2__ } ) }
 numericliteral: /\d+/
  { $return = AzureARM::Expression::Integer->new(Value => $item{ __PATTERN1__ } ) }
 functionname: /\w+/
