@@ -56,7 +56,7 @@ my $arm = AzureARM->new;
   diag($expression);
   my $exp = $arm->parse_expression($expression);
   isa_ok($exp, 'AzureARM::Expression::Function');
-  cmp_ok($exp->Function, 'eq', 'greaterOrEquals');
+  cmp_ok($exp->Function, 'eq', 'createArray');
   isa_ok($exp->Parameters->[0], 'AzureARM::Expression::Integer');
   cmp_ok($exp->Parameters->[0]->Value, '==', 1);
   isa_ok($exp->Parameters->[1], 'AzureARM::Expression::Integer');
