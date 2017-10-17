@@ -26,13 +26,17 @@ foreach my $file_name (@files) {
   my $content = $file->slurp;
   my $origin = decode_json($content);
   my $arm;
+
   lives_ok sub { $arm = AzureARM->from_hashref($origin) }, "Parsed $file";
-  cmp_ok($arm->VariableCount, '==', keys %{ $origin->{ variables } // {} }, 'Got the same number of variables');
-  cmp_ok($arm->ParameterCount, '==', keys %{ $origin->{ parameters } // {} }, 'Got the same number of variables');
+
+  cmp_ok($arm->VariableCount,  '==', keys %{ $origin->{ variables }  // {} }, 'Got the same number of variables');
+  cmp_ok($arm->ParameterCount, '==', keys %{ $origin->{ parameters } // {} }, 'Got the same number of parameters');
+  cmp_ok($arm->OutputCount,    '==', keys %{ $origin->{ outputs }    // {} }, 'Got the same number of outputs');
 
   my $generated = $arm->as_hashref;
 
   is_deeply($generated->{ parameters }, $origin->{ parameters }, 'Got the same parameters once parsed');
+  is_deeply($generated->{ outputs }, $origin->{ outputs }, 'Got the same outputs once parsed');
 
   cmp_ok(keys %{ $generated->{ variables } // {} }, '==', keys %{ $origin->{ variables } // {} }, 'Got the same number of variables');
   foreach my $var (keys $generated->{ variables }->%*) {
