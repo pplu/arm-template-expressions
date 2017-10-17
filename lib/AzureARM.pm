@@ -75,6 +75,8 @@ package AzureARM {
     my ($class, $hashref) = @_;
     my $self = $class->new;
 
+    my @args;
+
     my $variables;
     if (defined $hashref->{ variables }) {
       $variables = {};
@@ -83,9 +85,10 @@ package AzureARM {
           $hashref->{ variables }->{ $var_name }
         );
       }
+      push @args, variables => $variables;
     }
     
-    $class->new(variables => $variables);
+    $class->new(@args);
   }
 
   sub parse_expression {
