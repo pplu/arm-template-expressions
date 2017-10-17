@@ -94,6 +94,13 @@ package AzureARM::Parameter {
     }
   }
 }
+package AzureARM::Output {
+  use Moose;
+  use MooseX::StrictConstructor;
+
+  has type => (is => 'ro', required => 1, isa => 'AzureARM::Parameter::Types');
+  has value => (is => 'ro', required => 1, isa => 'AzureARM::Expression::FirstLevel');
+}
 package AzureARM::ParseException {
   use Moose;
   extends 'Throwable::Error';
@@ -133,6 +140,16 @@ package AzureARM {
       Variable => 'accessor',
     }
   );
+  has outputs => (
+    is => 'ro',
+    isa => 'HashRef[AzureARM::Output]',
+    traits => [ 'Hash' ],
+    handles => {
+      OutputCount => 'count',
+      OutputNames => 'keys',
+      Output => 'accessor',
+    }
+  );
 
   sub as_hashref {
     my $self = shift;
@@ -164,16 +181,33 @@ package AzureARM {
         eval {
           $parameters->{ $param_name } = AzureARM::Parameter->new($hashref->{ parameters }->{ $param_name });
         };
-        if ($@) { AzureARM::ParseException->throw(path => "parameters.$param_name", error => $@) }
+        if ($@) { AzureARM::ParseException->throw(path => "parameters.$param_name", error => $@->message) }
       }
       push @args, parameters => $parameters;
+    }
+    if (defined $hashref->{ outputs }) {
+      my $outputs = {};
+      foreach my $param_name (keys $hashref->{ outputs }->%*) {
+        my $output = $hashref->{ outputs }->{ $param_name };
+        my $orig_value = $output->{ value };
+        my $parsed = $self->parse_expression($output->{ value });
+        AzureARM::ParseException->throw(path => "outputs.$param_name", error => "Can't understand $orig_value") if (not defined $parsed); 
+        eval {
+          $outputs->{ $param_name } = AzureARM::Output->new($output);
+        };
+        if ($@) { AzureARM::ParseException->throw(path => "outputs.$param_name", error => $@->message) }
+      }
+      push @args, outputs => $outputs;
     }
     if (defined $hashref->{ variables }) {
       my $variables = {};
       foreach my $var_name (keys $hashref->{ variables }->%*) {
-        $variables->{ $var_name } = $self->parse_expression(
-          $hashref->{ variables }->{ $var_name }
-        );
+        my $expr = $self->parse_expression($hashref->{ variables }->{ $var_name });
+        if (defined $expr) {
+          $variables->{ $var_name } = $expr;
+        } else {
+          $variables->{ $var_name } = AzureARM::Value->new(Value => $hashref->{ variables }->{ $var_name });
+        }
       }
       push @args, variables => $variables;
     }
@@ -187,9 +221,7 @@ package AzureARM {
     if (my $tree = $self->_parser->startrule($string)) {
       return $tree;
     } else {
-      return AzureARM::Value->new(
-        Value => $string
-      );
+      return undef;
     }
   }
 
