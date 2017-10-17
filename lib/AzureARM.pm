@@ -3,6 +3,11 @@ package AzureARM::Value {
    has Value => (
     is => 'ro',
   );
+
+  sub as_hashref {
+    my $self = shift;
+    return $self->Value;
+  }
 }
 package AzureARM::Expression {
   use Moose;
@@ -26,8 +31,12 @@ package AzureARM::Expression::FirstLevel {
     my $self = shift;
     return '[' . $self->Value->as_string . ']';
   }
-}
 
+  sub as_hashref {
+    my $self = shift;
+    return $self->as_string;
+  }
+}
 package AzureARM::Expression::Function {
   use Moose;
   extends 'AzureARM::Expression';
@@ -72,8 +81,22 @@ package AzureARM {
     traits => [ 'Hash' ],
     handles => {
       VariableCount => 'count',
+      VariableNames => 'keys',
+      Variable => 'accessor',
     }
   );
+
+  sub as_hashref {
+    my $self = shift;
+    my $hashref = {};
+    if (defined $self->variables) {
+      my $v = $hashref->{ variables } = {};
+      foreach my $k ($self->VariableNames) {
+        $v->{ $k } = $self->Variable($k)->as_hashref;
+      }
+    }
+    return $hashref;
+  }
 
   sub from_hashref {
     my ($class, $hashref) = @_;
