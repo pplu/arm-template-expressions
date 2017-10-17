@@ -2,6 +2,8 @@
 
 #$::RD_TRACE=1;
 
+use strict;
+use warnings;
 use AzureARM;
 use Test::More;
 use Data::Dumper;
@@ -9,17 +11,12 @@ use Data::Dumper;
 my $arm = AzureARM->new;
 
 {
-  my $expression = "A String";
-  diag($expression);
-  my $exp = $arm->parse_expression($expression);
-  isa_ok($exp, 'AzureARM::Expression::String');
-  cmp_ok($exp->Value, 'eq', 'A String');
-}
-
-{
   my $expression = "[variables('var1')]";
   diag($expression);
   my $exp = $arm->parse_expression($expression);
+  isa_ok($exp, 'AzureARM::Expression::FirstLevel');
+  cmp_ok($exp->as_string, 'eq', $expression);
+  $exp = $exp->Value;
   isa_ok($exp, 'AzureARM::Expression::Function');
   cmp_ok($exp->Function, 'eq', 'variables');
 }
@@ -28,6 +25,9 @@ my $arm = AzureARM->new;
   my $expression = "[concat(variables('var1'), '-POSTFIX')]";
   diag($expression);
   my $exp = $arm->parse_expression($expression);
+  isa_ok($exp, 'AzureARM::Expression::FirstLevel');
+  cmp_ok($exp->as_string, 'eq', $expression);
+  $exp = $exp->Value;
   isa_ok($exp, 'AzureARM::Expression::Function');
   cmp_ok($exp->Function, 'eq', 'concat');
   isa_ok($exp->Parameters->[0], 'AzureARM::Expression::Function');
@@ -38,9 +38,12 @@ my $arm = AzureARM->new;
 
 
 {
-  my $expression = "[greaterOrEquals(parameters('firstInt'), parameters('secondInt') )]";
+  my $expression = "[greaterOrEquals(parameters('firstInt'), parameters('secondInt'))]";
   diag($expression);
   my $exp = $arm->parse_expression($expression);
+  isa_ok($exp, 'AzureARM::Expression::FirstLevel');
+  cmp_ok($exp->as_string, 'eq', $expression);
+  $exp = $exp->Value;
   isa_ok($exp, 'AzureARM::Expression::Function');
   cmp_ok($exp->Function, 'eq', 'greaterOrEquals');
   isa_ok($exp->Parameters->[0], 'AzureARM::Expression::Function');
@@ -55,6 +58,9 @@ my $arm = AzureARM->new;
   my $expression = "[createArray(1, 2, 3)]"; 
   diag($expression);
   my $exp = $arm->parse_expression($expression);
+  isa_ok($exp, 'AzureARM::Expression::FirstLevel');
+  cmp_ok($exp->as_string, 'eq', $expression);
+  $exp = $exp->Value;
   isa_ok($exp, 'AzureARM::Expression::Function');
   cmp_ok($exp->Function, 'eq', 'createArray');
   isa_ok($exp->Parameters->[0], 'AzureARM::Expression::Integer');
@@ -69,6 +75,9 @@ my $arm = AzureARM->new;
   my $expression = "[subscription()]";
   diag($expression);
   my $exp = $arm->parse_expression($expression);
+  isa_ok($exp, 'AzureARM::Expression::FirstLevel');
+  cmp_ok($exp->as_string, 'eq', $expression);
+  $exp = $exp->Value;
   isa_ok($exp, 'AzureARM::Expression::Function');
   cmp_ok($exp->Function, 'eq', 'subscription');
 }

@@ -1,9 +1,14 @@
+package AzureARM::Value {
+  use Moose;
+   has Value => (
+    is => 'ro',
+  );
+}
 package AzureARM::Expression {
   use Moose;
-  has Value => (
-    is => 'ro',
+  extends 'AzureARM::Value';
+  has '+Value' => (
     isa => 'AzureARM::Expression',
-    #required => 1
   );
 }
 package AzureARM::Expression::Array {
@@ -11,22 +16,51 @@ package AzureARM::Expression::Array {
   extends 'AzureARM::Expression';
   has '+Value' => (isa => 'ArrayRef[AzureARM::Expression]');
 }
+package AzureARM::Expression::FirstLevel {
+  use Moose;
+  extends 'AzureARM::Expression';
+
+  has '+Value' => (isa => 'AzureARM::Expression');
+  
+  sub as_string {
+    my $self = shift;
+    return '[' . $self->Value->as_string . ']';
+  }
+}
+
 package AzureARM::Expression::Function {
   use Moose;
   extends 'AzureARM::Expression';
+  use feature 'postderef';
+
   has 'Function' => (is => 'ro', isa => 'Str', required => 1);
   has 'Parameters' => (is => 'ro', isa => 'ArrayRef[AzureARM::Expression]');
   has '+Value' => (isa => '');
+
+  sub as_string {
+    my $self = shift;
+    return join '', $self->Function, '(', (join ', ', map { $_->as_string } $self->Parameters->@*), ')'
+  };
 }
 package AzureARM::Expression::String {
   use Moose;
   extends 'AzureARM::Expression';
   has '+Value' => (isa => 'Str');
+
+  sub as_string {
+    my $self = shift;
+    return "'" . $self->Value . "'";
+  }
 }
 package AzureARM::Expression::Integer {
   use Moose;
   extends 'AzureARM::Expression';
   has '+Value' => (isa => 'Str');
+
+  sub as_string {
+    my $self = shift;
+    return $self->Value;
+  }
 }
 package AzureARM {
   use Moose;
@@ -60,7 +94,7 @@ package AzureARM {
     if (my $tree = $self->_parser->startrule($string)) {
       return $tree;
     } else {
-      return AzureARM::Expression::String->new(
+      return AzureARM::Value->new(
         Value => $string
       );
     }
@@ -70,7 +104,7 @@ package AzureARM {
 
   our $grammar = q#
 startrule: '[' functioncall ']' 
- { $return = $item{ functioncall } }
+ { $return = AzureARM::Expression::FirstLevel->new(Value => $item{ functioncall }) }
 functioncall: functionname '(' parameter(s? /,/) ')'
  { $return = AzureARM::Expression::Function->new(Parameters => $item{'parameter(s?)'}, Function => $item{ functionname }) }
 stringliteral: /'/ /[^']+/ /'/
