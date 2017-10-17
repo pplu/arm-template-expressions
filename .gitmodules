@@ -1,0 +1,3 @@
+[submodule "t/azure-examples"]
+	path = t/azure-examples
+	url = https://github.com/Azure/azure-quickstart-templates.git
