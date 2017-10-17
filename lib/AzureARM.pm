@@ -71,10 +71,48 @@ package AzureARM::Expression::Integer {
     return $self->Value;
   }
 }
+package AzureARM::Parameter {
+  use Moose;
+  use MooseX::StrictConstructor;
+
+  has type => (is => 'ro');
+  has defaultValue => (is => 'ro');
+  has allowedValues => (is => 'ro');
+  has minValue => (is => 'ro');
+  has maxValue => (is => 'ro');
+  has minLength => (is => 'ro');
+  has maxLength => (is => 'ro');
+  has metadata => (is => 'ro');
+}
+package AzureARM::ParseException {
+  use Moose;
+  extends 'Throwable::Error';
+
+  has path => (is => 'ro', isa => 'Str', required => 1);
+  has error => (is => 'ro', isa => 'Str', required => 1);
+
+  has message => (is => 'ro', lazy => 1, default => sub {
+    my $self = shift;
+    sprintf "Error on %s: %s", $self->path, $self->error;
+  });
+}
 package AzureARM {
   use Moose;
   use feature 'postderef';
 
+  has schema => (is => 'ro', isa => 'Str'); # required => 1);
+  has contentVersion => (is => 'ro', isa => 'Str'); # required => 1);
+
+  has parameters => (
+    is => 'ro',
+    isa => 'HashRef[AzureARM::Parameter]',
+    traits => [ 'Hash' ],
+    handles => {
+      ParameterCount => 'count',
+      ParameterNames => 'keys',
+      Parameter => 'accessor',
+    }
+  );
   has variables => (
     is => 'ro',
     isa => 'HashRef[AzureARM::Value]',
@@ -104,9 +142,18 @@ package AzureARM {
 
     my @args;
 
-    my $variables;
+    if (defined $hashref->{ parameters }) {
+      my $parameters = {};
+      foreach my $param_name (keys $hashref->{ parameters }->%*) {
+        eval {
+          $parameters->{ $param_name } = AzureARM::Parameter->new($hashref->{ parameters }->{ $param_name });
+        };
+        if ($@) { AzureARM::ParseException->throw(path => "parameters.$param_name", error => $@) }
+      }
+      push @args, parameters => $parameters;
+    }
     if (defined $hashref->{ variables }) {
-      $variables = {};
+      my $variables = {};
       foreach my $var_name (keys $hashref->{ variables }->%*) {
         $variables->{ $var_name } = $self->parse_expression(
           $hashref->{ variables }->{ $var_name }
