@@ -83,6 +83,13 @@ package AzureARM::Parameter {
   has minLength => (is => 'ro');
   has maxLength => (is => 'ro');
   has metadata => (is => 'ro');
+
+  sub as_hashref {
+    my $self = shift;
+    return {
+      map { ($_ => $self->$_) } grep { defined $self->$_ } map { $_->name } $self->meta->get_all_attributes
+    }
+  }
 }
 package AzureARM::ParseException {
   use Moose;
@@ -131,6 +138,12 @@ package AzureARM {
       my $v = $hashref->{ variables } = {};
       foreach my $k ($self->VariableNames) {
         $v->{ $k } = $self->Variable($k)->as_hashref;
+      }
+    }
+    if (defined $self->parameters) {
+      my $v = $hashref->{ parameters } = {};
+      foreach my $k ($self->ParameterNames) {
+        $v->{ $k } = $self->Parameter($k)->as_hashref;
       }
     }
     return $hashref;
