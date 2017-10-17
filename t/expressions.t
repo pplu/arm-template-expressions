@@ -82,7 +82,28 @@ my $arm = AzureARM->new;
   cmp_ok($exp->Function, 'eq', 'subscription');
 }
 
-#TODO:
-#"[uniqueString(subscription().subscriptionId)]"
+{
+  my $expression = "[subscription().subscriptionId]";
+  diag($expression);
+  my $exp = $arm->parse_expression($expression);
+  isa_ok($exp, 'AzureARM::Expression::FirstLevel');
+  cmp_ok($exp->as_string, 'eq', $expression);
+  $exp = $exp->Value;
+  isa_ok($exp, 'AzureARM::Expression::AccessProperty');
+  cmp_ok($exp->Property, 'eq', 'subscriptionId');
+  cmp_ok($exp->On->Function, 'eq', 'subscription');
+}
+
+{
+  my $expression = "[resourceGroup().name]";
+  diag($expression);
+  my $exp = $arm->parse_expression($expression);
+  isa_ok($exp, 'AzureARM::Expression::FirstLevel');
+  cmp_ok($exp->as_string, 'eq', $expression);
+  $exp = $exp->Value;
+  isa_ok($exp, 'AzureARM::Expression::AccessProperty');
+  cmp_ok($exp->Property, 'eq', 'name');
+  cmp_ok($exp->On->Function, 'eq', 'resourceGroup');
+}
 
 done_testing;

@@ -51,6 +51,18 @@ package AzureARM::Expression::Function {
     return join '', $self->Function, '(', (join ', ', map { $_->as_string } $self->Parameters->@*), ')'
   };
 }
+package AzureARM::Expression::AccessProperty {
+  use Moose;
+  extends 'AzureARM::Expression';
+
+  has Property => (is => 'ro', isa => 'Str', required => 1);
+  has On => (is => 'ro', isa => 'AzureARM::Expression', required => 1);
+
+  sub as_string {
+    my $self = shift;
+    return $self->On->as_string . '.' . $self->Property;
+  }
+}
 package AzureARM::Expression::String {
   use Moose;
   extends 'AzureARM::Expression';
@@ -230,8 +242,17 @@ package AzureARM {
   our $grammar = q#
 startrule: '[' functioncall ']' 
  { $return = AzureARM::Expression::FirstLevel->new(Value => $item{ functioncall }) }
-functioncall: functionname '(' parameter(s? /,/) ')'
- { $return = AzureARM::Expression::Function->new(Parameters => $item{'parameter(s?)'}, Function => $item{ functionname }) }
+functioncall: functionname '(' parameter(s? /,/) ')' property_access(?)
+  { 
+    my $function = AzureARM::Expression::Function->new(Parameters => $item{'parameter(s?)'}, Function => $item{ functionname });
+    if (defined $item{ 'property_access(?)' }->[0]) {
+      $return = AzureARM::Expression::AccessProperty->new(Property => $item{ 'property_access(?)' }->[0], On => $function);
+    } else {
+      $return = $function;
+    }
+  }
+property_access: '.' functionname
+ { $return = $item{ functionname } }
 stringliteral: /'/ /[^']+/ /'/
  { $return = AzureARM::Expression::String->new(Value => $item{ __PATTERN2__ } ) }
 numericliteral: /\d+/
