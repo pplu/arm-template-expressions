@@ -74,14 +74,17 @@ package AzureARM::Expression::Integer {
 package AzureARM::Parameter {
   use Moose;
   use MooseX::StrictConstructor;
+  use Moose::Util::TypeConstraints qw/enum/;
 
-  has type => (is => 'ro');
+  enum 'AzureARM::Parameter::Types', [qw/string String SecureString securestring int Int bool Bool object secureObject array/ ];
+
+  has type => (is => 'ro', required => 1, isa => 'AzureARM::Parameter::Types');
   has defaultValue => (is => 'ro');
-  has allowedValues => (is => 'ro');
-  has minValue => (is => 'ro');
-  has maxValue => (is => 'ro');
-  has minLength => (is => 'ro');
-  has maxLength => (is => 'ro');
+  has allowedValues => (is => 'ro', isa => 'ArrayRef');
+  has minValue => (is => 'ro', isa => 'Int');
+  has maxValue => (is => 'ro', isa => 'Int');
+  has minLength => (is => 'ro', isa => 'Int');
+  has maxLength => (is => 'ro', isa => 'Int');
   has metadata => (is => 'ro');
 
   sub as_hashref {
