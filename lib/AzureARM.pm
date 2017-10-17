@@ -68,7 +68,11 @@ package AzureARM {
 
   has variables => (
     is => 'ro',
-    isa => 'HashRef[AzureARM::Expression]',
+    isa => 'HashRef[AzureARM::Value]',
+    traits => [ 'Hash' ],
+    handles => {
+      VariableCount => 'count',
+    }
   );
 
   sub from_hashref {
