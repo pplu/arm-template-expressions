@@ -119,4 +119,17 @@ my $arm = AzureARM->new;
   cmp_ok($exp->On->Parameters->[0]->Value, 'eq', 'xxx');
 }
 
+{
+  my $expression = "[reference('xxx').instanceView.statuses[0].message]";
+  diag($expression);
+  my $exp = $arm->parse_expression($expression);
+  isa_ok($exp, 'AzureARM::Expression::FirstLevel');
+  cmp_ok($exp->as_string, 'eq', $expression);
+  $exp = $exp->Value;
+  isa_ok($exp, 'AzureARM::Expression::AccessProperty');
+  is_deeply($exp->Properties, [ 'instanceView', 'statuses[0]', 'message' ]);
+  cmp_ok($exp->On->Function, 'eq', 'reference');
+  cmp_ok($exp->On->Parameters->[0]->Value, 'eq', 'xxx');
+}
+
 done_testing;

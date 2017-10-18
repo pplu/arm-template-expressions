@@ -254,8 +254,10 @@ functioncall: functionname '(' parameter(s? /,/) ')' property_access(s?)
       $return = $function;
     }
   }
-property_access: '.' functionname
- { $return = $item{ functionname } }
+property_access: '.' propaccess
+ { $return = $item{ propaccess } }
+propaccess: /\w+(?:\\[\\d+\\]|)/ 
+ { $return = $item{ __PATTERN1__ } }
 stringliteral: /'/ /[^']+/ /'/
  { $return = AzureARM::Expression::String->new(Value => $item{ __PATTERN2__ } ) }
 numericliteral: /\d+/
