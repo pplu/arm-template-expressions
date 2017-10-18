@@ -9,6 +9,13 @@ package AzureARM::Value {
     return $self->Value;
   }
 }
+package AzureARM::Value::Integer {
+  use Moose;
+  extends 'AzureARM::Value';
+  has '+Value' => (
+    isa => 'Int'
+  );
+}
 package AzureARM::Expression {
   use Moose;
   extends 'AzureARM::Value';
@@ -124,6 +131,55 @@ package AzureARM::Output {
     }
   }
 }
+package AzureARM::ResourceCopy {
+  use Moose;
+  use Moose::Util::TypeConstraints qw/enum/;
+  enum 'AzureARM::ResourceCopy::Modes' => [ 'serial', 'parallel' ];
+  has name => (is => 'ro', isa => 'Str', required => 1);
+  has count => (is => 'ro', isa => 'AzureARM::Expression::FirstLevel|AzureARM::Value::Integer', required => 1);
+  has mode => (is => 'ro', isa => 'AzureARM::ResourceCopy::Modes');
+  has batchSize => (is => 'ro', isa => 'AzureARM::Value::Integer');
+
+  sub as_hashref {
+    my $self = shift;
+    return {
+      name => $self->name,
+      count => $self->count->as_hashref,
+      mode => $self->mode,
+      batchSize => $self->batchSize,
+    }
+  }
+}
+package AzureARM::Resource {
+  use Moose;
+
+  has condition => (is => 'ro', isa => 'AzureARM::Expression::FirstLevel');
+  has apiVersion => (is => 'ro', isa => 'Str', required => 1);
+  has type => (is => 'ro', isa => 'Str', required => 1);
+  has name => (is => 'ro', isa => 'Str', required => 1);
+  has location => (is => 'ro', isa => 'Str');
+  has tags => (is => 'ro', isa => 'HashRef'); 
+  has comments => (is => 'ro', isa => 'Str');
+  has copy => (is => 'ro', isa => 'AzureARM::ResourceCopy');
+  has dependsOn => (is => 'ro', isa => 'ArrayRef[Str]');
+
+  #properties
+  #resources
+
+  sub as_hashref {
+    my $self = shift;
+    return {
+      condition => $self->condition->as_hashref,
+      apiVersion => $self->apiVersion,
+      type => $self->type,
+      name => $self->name,
+      location => $self->location,
+      tags => $self->tags,
+      comments => $self->comments,
+      dependsOn => $self->dependsOn,
+    }
+  }
+}
 package AzureARM::ParseException {
   use Moose;
   extends 'Throwable::Error';
@@ -140,8 +196,8 @@ package AzureARM {
   use Moose;
   use feature 'postderef';
 
-  has schema => (is => 'ro', isa => 'Str'); # required => 1);
-  has contentVersion => (is => 'ro', isa => 'Str'); # required => 1);
+  has schema => (is => 'ro', isa => 'Str'); #, required => 1);
+  has contentVersion => (is => 'ro', isa => 'Str'); #, required => 1);
 
   has parameters => (
     is => 'ro',
@@ -204,6 +260,9 @@ package AzureARM {
 
     my @args;
 
+    push @args, schema => $hashref->{ '$schema' };
+    push @args, contentVersion => $hashref->{ contentVersion };
+
     if (defined $hashref->{ parameters }) {
       my $parameters = {};
       foreach my $param_name (keys $hashref->{ parameters }->%*) {
@@ -239,6 +298,31 @@ package AzureARM {
         }
       }
       push @args, variables => $variables;
+    }
+    if (defined $hashref->{ resources }) {
+      my $resources = [];
+      my $i = 0;
+      foreach my $resource ($hashref->{ resources }->@*) {
+        my $condition = $resource->{ condition };
+
+        if (defined $resource->{ condition }) {
+          my $parsed = $self->parse_expression($resource->{ condition });
+          AzureARM::ParseException->throw(path => "resources.$i.condition", error => "Could not parse expression $resource->{condition}") if (not defined $parsed);
+        }
+
+        if (defined $resource->{ copy }) {
+          my $copy = $resource->{ copy };
+
+          my $original_count = $copy->{ count };
+          $copy->{ count } = $self->parse_expression($original_count) if (defined $original_count);
+          $copy->{ count } = AzureARM::Value::Integer->new(Value => $original_count) if (not defined $copy->{ count });
+
+          $resource->{ copy } = AzureARM::ResourceCopy->new($copy);
+        }
+        
+        push @$resources, AzureARM::Resource->new($resource);
+      }
+      push @args, resources => $resources;
     }
     
     $class->new(@args);
