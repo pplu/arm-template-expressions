@@ -10,12 +10,16 @@ use File::Find;
 use Path::Class::File;
 use JSON::MaybeXS;
 
-File::Find::find({wanted => \&wanted}, 't/azure-examples/');
-
 my @files;
-sub wanted {
-    /^azuredeploy\.json\z/s
-    && push @files, $File::Find::name;
+
+if (@ARGV) {
+  @files = @ARGV;
+} else {
+  File::Find::find({wanted => \&wanted}, 't/azure-examples/');
+  sub wanted {
+      /^azuredeploy\.json\z/s
+      && push @files, $File::Find::name;
+  }
 }
 
 use AzureARM;
