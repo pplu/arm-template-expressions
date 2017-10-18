@@ -260,7 +260,7 @@ propaccess: /\w+(?:\\[\\d+\\]|)/
  { $return = $item{ __PATTERN1__ } }
 stringliteral: /'/ /[^']+/ /'/
  { $return = AzureARM::Expression::String->new(Value => $item{ __PATTERN2__ } ) }
-numericliteral: /\d+/
+numericliteral: /-?\d+/
  { $return = AzureARM::Expression::Integer->new(Value => $item{ __PATTERN1__ } ) }
 functionname: /\w+/
  { $return = $item{ __PATTERN1__ } }

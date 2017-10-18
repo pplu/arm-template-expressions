@@ -132,4 +132,18 @@ my $arm = AzureARM->new;
   cmp_ok($exp->On->Parameters->[0]->Value, 'eq', 'xxx');
 }
 
+{
+  my $expression = "[add(parameters('numberOfSubnets'), -1)]";
+  diag($expression);
+  my $exp = $arm->parse_expression($expression);
+  isa_ok($exp, 'AzureARM::Expression::FirstLevel');
+  cmp_ok($exp->as_string, 'eq', $expression);
+  $exp = $exp->Value;
+  isa_ok($exp, 'AzureARM::Expression::Function');
+  cmp_ok($exp->Function, 'eq', 'add');
+  isa_ok($exp->Parameters->[1], 'AzureARM::Expression::Integer');
+  cmp_ok($exp->Parameters->[1]->Value, '==', -1);
+
+}
+
 done_testing;
