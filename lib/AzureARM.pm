@@ -114,7 +114,15 @@ package AzureARM::Output {
   use MooseX::StrictConstructor;
 
   has type => (is => 'ro', required => 1, isa => 'AzureARM::Parameter::Types');
-  has value => (is => 'ro', required => 1, isa => 'AzureARM::Expression::FirstLevel');
+  has value => (is => 'ro', required => 1, isa => 'AzureARM::Expression::FirstLevel|AzureARM::Value');
+
+  sub as_hashref {
+    my $self = shift;
+    return {
+      type => $self->type,
+      value => $self->value->as_hashref,
+    }
+  }
 }
 package AzureARM::ParseException {
   use Moose;
@@ -181,6 +189,12 @@ package AzureARM {
         $v->{ $k } = $self->Parameter($k)->as_hashref;
       }
     }
+    if (defined $self->outputs) {
+      my $v = $hashref->{ outputs } = {};
+      foreach my $k ($self->OutputNames) {
+        $v->{ $k } = $self->Output($k)->as_hashref;
+      }
+    }
     return $hashref;
   }
 
@@ -205,12 +219,12 @@ package AzureARM {
       foreach my $param_name (keys $hashref->{ outputs }->%*) {
         my $output = $hashref->{ outputs }->{ $param_name };
         my $orig_value = $output->{ value };
-        my $parsed = $self->parse_expression(delete $output->{ value });
-        AzureARM::ParseException->throw(path => "outputs.$param_name", error => "Can't understand $orig_value") if (not defined $parsed); 
-        eval {
-          $outputs->{ $param_name } = AzureARM::Output->new(value => $parsed, %$output);
-        };
-        if ($@) { AzureARM::ParseException->throw(path => "outputs.$param_name", error => $@->message) }
+        my $parsed = $self->parse_expression($output->{ value });
+        if (defined $parsed) {
+          $outputs->{ $param_name } = AzureARM::Output->new(%$output, value => $parsed);
+        } else {
+          $outputs->{ $param_name } = AzureARM::Output->new(%$output, value => AzureARM::Value->new(Value => $orig_value));
+        }
       }
       push @args, outputs => $outputs;
     }

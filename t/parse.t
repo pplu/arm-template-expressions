@@ -40,7 +40,12 @@ foreach my $file_name (@files) {
   my $generated = $arm->as_hashref;
 
   is_deeply($generated->{ parameters }, $origin->{ parameters }, 'Got the same parameters once parsed');
-  is_deeply($generated->{ outputs }, $origin->{ outputs }, 'Got the same outputs once parsed');
+
+  cmp_ok(keys %{ $generated->{ outputs } // {} }, '==', keys %{ $origin->{ outputs } // {} }, 'Got the same number of outputs');
+  foreach my $out (keys $generated->{ outputs }->%*) {
+    equiv_expression($generated->{ outputs }->{ $out }->{ value }, $origin->{ outputs }->{ $out }->{ value }, "Output $out value is equivalent once parsed");
+    cmp_ok($generated->{ outputs }->{ $out }->{ type }, 'eq', $origin->{ outputs }->{ $out }->{ type }, "Output $out type is equivalent once parsed");
+  }
 
   cmp_ok(keys %{ $generated->{ variables } // {} }, '==', keys %{ $origin->{ variables } // {} }, 'Got the same number of variables');
   foreach my $var (keys $generated->{ variables }->%*) {
