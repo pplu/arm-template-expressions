@@ -90,7 +90,7 @@ my $arm = AzureARM->new;
   cmp_ok($exp->as_string, 'eq', $expression);
   $exp = $exp->Value;
   isa_ok($exp, 'AzureARM::Expression::AccessProperty');
-  cmp_ok($exp->Property, 'eq', 'subscriptionId');
+  is_deeply($exp->Properties, [ 'subscriptionId' ]);
   cmp_ok($exp->On->Function, 'eq', 'subscription');
 }
 
@@ -102,8 +102,21 @@ my $arm = AzureARM->new;
   cmp_ok($exp->as_string, 'eq', $expression);
   $exp = $exp->Value;
   isa_ok($exp, 'AzureARM::Expression::AccessProperty');
-  cmp_ok($exp->Property, 'eq', 'name');
+  is_deeply($exp->Properties, [ 'name' ]);
   cmp_ok($exp->On->Function, 'eq', 'resourceGroup');
+}
+
+{
+  my $expression = "[reference('xxx').dnsSettings.fqdn]";
+  diag($expression);
+  my $exp = $arm->parse_expression($expression);
+  isa_ok($exp, 'AzureARM::Expression::FirstLevel');
+  cmp_ok($exp->as_string, 'eq', $expression);
+  $exp = $exp->Value;
+  isa_ok($exp, 'AzureARM::Expression::AccessProperty');
+  is_deeply($exp->Properties, [ 'dnsSettings', 'fqdn' ]);
+  cmp_ok($exp->On->Function, 'eq', 'reference');
+  cmp_ok($exp->On->Parameters->[0]->Value, 'eq', 'xxx');
 }
 
 done_testing;

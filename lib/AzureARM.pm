@@ -54,13 +54,16 @@ package AzureARM::Expression::Function {
 package AzureARM::Expression::AccessProperty {
   use Moose;
   extends 'AzureARM::Expression';
+  use feature 'postderef';
 
-  has Property => (is => 'ro', isa => 'Str', required => 1);
+  has Properties => (is => 'ro', isa => 'ArrayRef[Str]', required => 1, traits => [ 'Array' ], handles => { NumProperties => 'count' });
   has On => (is => 'ro', isa => 'AzureARM::Expression', required => 1);
 
   sub as_string {
     my $self = shift;
-    return $self->On->as_string . '.' . $self->Property;
+    my $str = $self->On->as_string;
+    $str .= '.' . (join '.', $self->Properties->@*) if ($self->NumProperties > 0);
+    return $str;
   }
 }
 package AzureARM::Expression::String {
@@ -202,10 +205,10 @@ package AzureARM {
       foreach my $param_name (keys $hashref->{ outputs }->%*) {
         my $output = $hashref->{ outputs }->{ $param_name };
         my $orig_value = $output->{ value };
-        my $parsed = $self->parse_expression($output->{ value });
+        my $parsed = $self->parse_expression(delete $output->{ value });
         AzureARM::ParseException->throw(path => "outputs.$param_name", error => "Can't understand $orig_value") if (not defined $parsed); 
         eval {
-          $outputs->{ $param_name } = AzureARM::Output->new($output);
+          $outputs->{ $param_name } = AzureARM::Output->new(value => $parsed, %$output);
         };
         if ($@) { AzureARM::ParseException->throw(path => "outputs.$param_name", error => $@->message) }
       }
@@ -242,11 +245,11 @@ package AzureARM {
   our $grammar = q#
 startrule: '[' functioncall ']' 
  { $return = AzureARM::Expression::FirstLevel->new(Value => $item{ functioncall }) }
-functioncall: functionname '(' parameter(s? /,/) ')' property_access(?)
-  { 
+functioncall: functionname '(' parameter(s? /,/) ')' property_access(s?)
+  {
     my $function = AzureARM::Expression::Function->new(Parameters => $item{'parameter(s?)'}, Function => $item{ functionname });
-    if (defined $item{ 'property_access(?)' }->[0]) {
-      $return = AzureARM::Expression::AccessProperty->new(Property => $item{ 'property_access(?)' }->[0], On => $function);
+    if (@{ $item{ 'property_access(s?)' } } > 0) {
+      $return = AzureARM::Expression::AccessProperty->new(Properties => $item{ 'property_access(s?)' }, On => $function);
     } else {
       $return = $function;
     }
