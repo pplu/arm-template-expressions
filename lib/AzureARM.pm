@@ -305,9 +305,10 @@ package AzureARM {
       foreach my $resource ($hashref->{ resources }->@*) {
         my $condition = $resource->{ condition };
 
-        if (defined $resource->{ condition }) {
-          my $parsed = $self->parse_expression($resource->{ condition });
+        if (defined $condition) {
+          my $parsed = $self->parse_expression($condition);
           AzureARM::ParseException->throw(path => "resources.$i.condition", error => "Could not parse expression $resource->{condition}") if (not defined $parsed);
+          $resource->{ condition } = $parsed;
         }
 
         if (defined $resource->{ copy }) {
