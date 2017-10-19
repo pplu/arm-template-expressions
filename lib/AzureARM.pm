@@ -16,6 +16,26 @@ package AzureARM::Value::Integer {
     isa => 'Int'
   );
 }
+package AzureARM::Value::Hash {
+  use Moose;
+  extends 'AzureARM::Value';
+  has '+Value' => (isa => 'HashRef');
+
+  sub as_hashref {
+    my $self = shift;
+    return $self->Value;
+  }
+}
+package AzureARM::Value::Array {
+  use Moose;
+  extends 'AzureARM::Value';
+  has '+Value' => (isa => 'ArrayRef');
+
+  sub as_hashref {
+    my $self = shift;
+    return $self->Value;
+  }
+}
 package AzureARM::Expression {
   use Moose;
   extends 'AzureARM::Value';
@@ -152,6 +172,7 @@ package AzureARM::ResourceCopy {
 }
 package AzureARM::Resource {
   use Moose;
+  use feature 'postderef';
 
   has condition => (is => 'ro', isa => 'AzureARM::Expression::FirstLevel');
   has apiVersion => (is => 'ro', isa => 'Str', required => 1);
@@ -162,21 +183,30 @@ package AzureARM::Resource {
   has comments => (is => 'ro', isa => 'Str');
   has copy => (is => 'ro', isa => 'AzureARM::ResourceCopy');
   has dependsOn => (is => 'ro', isa => 'ArrayRef[Str]');
-
-  #properties
-  #resources
+  has properties => (is => 'ro', isa => 'AzureARM::Value::Hash|AzureARM::Expression::FirstLevel');
+  has resources => (
+    is => 'ro',
+    isa => 'ArrayRef[AzureARM::Resource]',
+    traits => [ 'Array' ],
+    handles => {
+      ResourceCount => 'count',
+    }
+  );
 
   sub as_hashref {
     my $self = shift;
     return {
-      condition => $self->condition->as_hashref,
+      (defined $self->condition)?(condition => $self->condition->as_hashref):(),
       apiVersion => $self->apiVersion,
       type => $self->type,
       name => $self->name,
-      location => $self->location,
-      tags => $self->tags,
-      comments => $self->comments,
-      dependsOn => $self->dependsOn,
+      (defined $self->location)?(location => $self->location):(),
+      (defined $self->tags)?(tags => $self->tags):(),
+      (defined $self->comments)?(comments => $self->comments):(),
+      (defined $self->copy)?(copy => $self->copy->as_hashref):(),
+      (defined $self->dependsOn)?(dependsOn => $self->dependsOn):(),
+      (defined $self->properties)?(properties => $self->properties->Value):(),
+      (defined $self->resources)?(resources => [ map { $_->as_hashref } $self->resources->@* ]):(),
     }
   }
 }
@@ -199,6 +229,14 @@ package AzureARM {
   has schema => (is => 'ro', isa => 'Str'); #, required => 1);
   has contentVersion => (is => 'ro', isa => 'Str'); #, required => 1);
 
+  has resources => (
+    is => 'ro',
+    isa => 'ArrayRef[AzureARM::Resource]',
+    traits => [ 'Array' ],
+    handles => {
+      ResourceCount => 'count',
+    }
+  );
   has parameters => (
     is => 'ro',
     isa => 'HashRef[AzureARM::Parameter]',
@@ -251,6 +289,11 @@ package AzureARM {
         $v->{ $k } = $self->Output($k)->as_hashref;
       }
     }
+    my @resources = map {
+      $_->as_hashref
+    } $self->resources->@*;
+    $hashref->{ resources } = \@resources;
+
     return $hashref;
   }
 
@@ -303,30 +346,62 @@ package AzureARM {
       my $resources = [];
       my $i = 0;
       foreach my $resource ($hashref->{ resources }->@*) {
-        my $condition = $resource->{ condition };
-
-        if (defined $condition) {
-          my $parsed = $self->parse_expression($condition);
-          AzureARM::ParseException->throw(path => "resources.$i.condition", error => "Could not parse expression $resource->{condition}") if (not defined $parsed);
-          $resource->{ condition } = $parsed;
-        }
-
-        if (defined $resource->{ copy }) {
-          my $copy = $resource->{ copy };
-
-          my $original_count = $copy->{ count };
-          $copy->{ count } = $self->parse_expression($original_count) if (defined $original_count);
-          $copy->{ count } = AzureARM::Value::Integer->new(Value => $original_count) if (not defined $copy->{ count });
-
-          $resource->{ copy } = AzureARM::ResourceCopy->new($copy);
-        }
-        
-        push @$resources, AzureARM::Resource->new($resource);
+        my $path = "resources.$i";
+        push @$resources, $self->_parse_resource($resource, $path);
       }
       push @args, resources => $resources;
     }
     
     $class->new(@args);
+  }
+
+  sub _parse_resource {
+    my ($self, $resource, $path) = @_;
+    my $condition = $resource->{ condition };
+
+    if (defined $condition) {
+      my $parsed = $self->parse_expression($condition);
+      AzureARM::ParseException->throw(path => "$path.condition", error => "Could not parse expression $resource->{condition}") if (not defined $parsed);
+      $resource->{ condition } = $parsed;
+    }
+
+    if (defined $resource->{ copy }) {
+      my $copy = $resource->{ copy };
+
+      my $original_count = $copy->{ count };
+      $copy->{ count } = $self->parse_expression($original_count) if (defined $original_count);
+      $copy->{ count } = AzureARM::Value::Integer->new(Value => $original_count) if (not defined $copy->{ count });
+
+      $resource->{ copy } = AzureARM::ResourceCopy->new($copy);
+    }
+
+    if (defined $resource->{ properties }) {
+      if (ref($resource->{ properties }) eq 'HASH') {
+        $resource->{ properties } = AzureARM::Value::Hash->new(Value => $resource->{ properties });
+      } else {
+        my $parsed = $self->parse_expression($resource->{ properties });
+        AzureARM::ParseException->throw(path => "$path.properties", error => "Could not parse expression $resource->{properties}") if (not defined $parsed);
+        $resource->{ properties } = $parsed;
+      }
+    }
+
+    if (defined $resource->{ resources }) {
+      if (ref($resource->{ resources }) eq 'ARRAY') {
+        my $resources = [];
+        my $i = 0;
+        foreach my $resource ($resource->{ resources }->@*) {
+          my $path = "$path.resources.$i";
+          push @$resources, $self->_parse_resource($resource, $path);
+        }
+        $resource->{ resources } = $resources;
+      } else {
+        my $parsed = $self->parse_expression($resource->{ resources });
+        AzureARM::ParseException->throw(path => "$path.resources", error => "Could not parse expression $resource->{resources}") if (not defined $parsed);
+        $resource->{ resources } = $parsed;
+      }
+    }
+    
+    return AzureARM::Resource->new($resource);
   }
 
   sub parse_expression {

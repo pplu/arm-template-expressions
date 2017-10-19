@@ -36,8 +36,20 @@ foreach my $file_name (@files) {
   cmp_ok($arm->VariableCount,  '==', keys %{ $origin->{ variables }  // {} }, 'Got the same number of variables');
   cmp_ok($arm->ParameterCount, '==', keys %{ $origin->{ parameters } // {} }, 'Got the same number of parameters');
   cmp_ok($arm->OutputCount,    '==', keys %{ $origin->{ outputs }    // {} }, 'Got the same number of outputs');
+  cmp_ok($arm->ResourceCount,  '==', @{ $origin->{ resources } }, 'Got the same number of resources');
 
   my $generated = $arm->as_hashref;
+
+  cmp_ok($generated->{ resources }->@*, '==', $origin->{ resources }->@*, 'Got the same resources once parsed');
+  for (my $i=0; $i <= $generated->{ resources }->@*; $i++) {
+    my $generated_r = $generated->{ resources }->[$i];
+    my $origin_r    = $origin->{ resources }->[$i];
+
+use Data::Dumper;
+print Dumper($generated_r, $origin_r);
+
+    is_deeply($generated_r, $origin_r);
+  }
 
   is_deeply($generated->{ parameters }, $origin->{ parameters }, 'Got the same parameters once parsed');
 
