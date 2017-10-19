@@ -1,7 +1,5 @@
 #!/usr/bin/env perl
 
-#$::RD_TRACE=1;
-
 use strict;
 use warnings;
 use AzureARM;
@@ -143,7 +141,21 @@ my $arm = AzureARM->new;
   cmp_ok($exp->Function, 'eq', 'add');
   isa_ok($exp->Parameters->[1], 'AzureARM::Expression::Integer');
   cmp_ok($exp->Parameters->[1]->Value, '==', -1);
-
 }
+
+{
+  my $expression = "[empty(replace(parameters('agentGroupName'), ' ', ''))]";
+  diag($expression);
+  my $exp = $arm->parse_expression($expression);
+  isa_ok($exp, 'AzureARM::Expression::FirstLevel');
+  cmp_ok($exp->as_string, 'eq', $expression);
+  $exp = $exp->Value;
+  isa_ok($exp, 'AzureARM::Expression::Function');
+  cmp_ok($exp->Function, 'eq', 'empty');
+  cmp_ok($exp->Parameters->[0]->Function, 'eq', 'replace');
+  cmp_ok($exp->Parameters->[0]->Parameters->[1]->Value, 'eq', ' ');
+  cmp_ok($exp->Parameters->[0]->Parameters->[2]->Value, 'eq', '');
+}
+
 
 done_testing;

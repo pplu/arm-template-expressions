@@ -342,7 +342,7 @@ package AzureARM {
 
   our $grammar = q#
 startrule: '[' functioncall ']' 
- { $return = AzureARM::Expression::FirstLevel->new(Value => $item{ functioncall }) }
+  { $return = AzureARM::Expression::FirstLevel->new(Value => $item{ functioncall }) }
 functioncall: functionname '(' parameter(s? /,/) ')' property_access(s?)
   {
     my $function = AzureARM::Expression::Function->new(Parameters => $item{'parameter(s?)'}, Function => $item{ functionname });
@@ -356,8 +356,11 @@ property_access: '.' propaccess
  { $return = $item{ propaccess } }
 propaccess: /\w+(?:\\[\\d+\\]|)/ 
  { $return = $item{ __PATTERN1__ } }
-stringliteral: /'/ /[^']+/ /'/
- { $return = AzureARM::Expression::String->new(Value => $item{ __PATTERN2__ } ) }
+stringliteral: /'([^']*)'/
+ {
+   my $str = substr($item{ __PATTERN1__ }, 1, length($item{ __PATTERN1__ })-2);
+   $return = AzureARM::Expression::String->new(Value => $str) 
+ }
 numericliteral: /-?\d+/
  { $return = AzureARM::Expression::Integer->new(Value => $item{ __PATTERN1__ } ) }
 functionname: /\w+/
