@@ -165,8 +165,8 @@ package AzureARM::ResourceCopy {
     return {
       name => $self->name,
       count => $self->count->as_hashref,
-      mode => $self->mode,
-      batchSize => $self->batchSize,
+      (defined $self->mode)?(mode => $self->mode):(),
+      (defined $self->batchSize)?(batchSize => $self->batchSize):(),
     }
   }
 }
