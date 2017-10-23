@@ -190,11 +190,13 @@ package AzureARM::Resource {
     traits => [ 'Array' ],
     handles => {
       ResourceCount => 'count',
+      ResourceList => 'elements',
     }
   );
 
   sub as_hashref {
     my $self = shift;
+
     return {
       (defined $self->condition)?(condition => $self->condition->as_hashref):(),
       apiVersion => $self->apiVersion,
@@ -206,7 +208,7 @@ package AzureARM::Resource {
       (defined $self->copy)?(copy => $self->copy->as_hashref):(),
       (defined $self->dependsOn)?(dependsOn => $self->dependsOn):(),
       (defined $self->properties)?(properties => $self->properties->Value):(),
-      (defined $self->resources)?(resources => [ map { $_->as_hashref } $self->resources->@* ]):(),
+      (defined $self->resources)?(resources => [ map { $_->as_hashref } $self->ResourceList ]):(),
     }
   }
 }
@@ -235,6 +237,7 @@ package AzureARM {
     traits => [ 'Array' ],
     handles => {
       ResourceCount => 'count',
+      ResourceList => 'elements',
     }
   );
   has parameters => (
@@ -289,10 +292,9 @@ package AzureARM {
         $v->{ $k } = $self->Output($k)->as_hashref;
       }
     }
-    my @resources = map {
+    $hashref->{ resources } = [ map {
       $_->as_hashref
-    } $self->resources->@*;
-    $hashref->{ resources } = \@resources;
+    } $self->ResourceList ];
 
     return $hashref;
   }
