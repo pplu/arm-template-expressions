@@ -207,7 +207,7 @@ package AzureARM::Resource {
       (defined $self->comments)?(comments => $self->comments):(),
       (defined $self->copy)?(copy => $self->copy->as_hashref):(),
       (defined $self->dependsOn)?(dependsOn => $self->dependsOn):(),
-      (defined $self->properties)?(properties => $self->properties->Value):(),
+      (defined $self->properties)?(properties => $self->properties->as_hashref):(),
       (defined $self->resources)?(resources => [ map { $_->as_hashref } $self->ResourceList ]):(),
     }
   }
