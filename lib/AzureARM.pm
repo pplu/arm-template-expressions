@@ -193,6 +193,9 @@ package AzureARM::Resource {
       ResourceList => 'elements',
     }
   );
+  has kind => (is => 'ro', isa => 'Str');
+  has sku => (is => 'ro', isa => 'AzureARM::Value::Hash');
+  has plan => (is => 'ro', isa => 'AzureARM::Value::Hash|AzureARM::Expression::FirstLevel');
 
   sub as_hashref {
     my $self = shift;
@@ -209,6 +212,9 @@ package AzureARM::Resource {
       (defined $self->dependsOn)?(dependsOn => $self->dependsOn):(),
       (defined $self->properties)?(properties => $self->properties->as_hashref):(),
       (defined $self->resources)?(resources => [ map { $_->as_hashref } $self->ResourceList ]):(),
+      (defined $self->kind)?(kind => $self->kind):(),
+      (defined $self->sku)?(sku => $self->sku->as_hashref):(),
+      (defined $self->plan)?(plan => $self->plan->as_hashref):(),
     }
   }
 }
@@ -375,6 +381,18 @@ package AzureARM {
       $copy->{ count } = AzureARM::Value::Integer->new(Value => $original_count) if (not defined $copy->{ count });
 
       $resource->{ copy } = AzureARM::ResourceCopy->new($copy);
+    }
+
+    $resource->{ sku }  = AzureARM::Value::Hash->new(Value => $resource->{ sku  }) if (defined $resource->{ sku  });
+
+    if (defined $resource->{ plan }) {
+      if (ref($resource->{ plan }) eq 'HASH') {
+        $resource->{ plan } = AzureARM::Value::Hash->new(Value => $resource->{ plan });
+      } else {
+        my $parsed = $self->parse_expression($resource->{ plan });
+        AzureARM::ParseException->throw(path => "$path.properties", error => "Could not parse expression $resource->{plan}") if (not defined $parsed);
+        $resource->{ plan } = $parsed;
+      }
     }
 
     if (defined $resource->{ properties }) {
