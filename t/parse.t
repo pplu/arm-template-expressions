@@ -70,7 +70,11 @@ sub equiv_expression {
   my ($expr1, $expr2, $text) = @_;
   $expr1 =~ s/\s//g;
   $expr2 =~ s/\s//g;
-  cmp_ok($expr1, 'eq', $expr2, $text); 
+  if (ref($expr1) eq 'HASH' or ref($expr1) eq 'ARRAY') {
+    is_deeply($expr1, $expr2, $text);
+  } else {
+    cmp_ok($expr1, 'eq', $expr2, $text); 
+  }
 }
 
 done_testing;
