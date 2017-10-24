@@ -15,6 +15,23 @@ package AzureARM::Value::Integer {
   has '+Value' => (
     isa => 'Int'
   );
+
+  sub as_hashref {
+    my $self = shift;
+    return $self->Value;
+  }
+}
+package AzureARM::Value::String {
+  use Moose;
+  extends 'AzureARM::Value';
+  has '+Value' => (
+    isa => 'Str'
+  );
+
+  sub as_hashref {
+    my $self = shift;
+    return $self->Value;
+  }
 }
 package AzureARM::Value::Hash {
   use Moose;
@@ -33,7 +50,7 @@ package AzureARM::Value::Array {
 
   sub as_hashref {
     my $self = shift;
-    return $self->Value;
+    return [ map { $_->Value } @{ $self->Value } ];
   }
 }
 package AzureARM::Expression {
@@ -196,6 +213,7 @@ package AzureARM::Resource {
   has kind => (is => 'ro', isa => 'Str');
   has sku => (is => 'ro', isa => 'AzureARM::Value::Hash');
   has plan => (is => 'ro', isa => 'AzureARM::Value::Hash|AzureARM::Expression::FirstLevel');
+  has zones => (is => 'ro', isa => 'AzureARM::Value::Array|AzureARM::Expression::FirstLevel');
 
   sub as_hashref {
     my $self = shift;
@@ -215,6 +233,7 @@ package AzureARM::Resource {
       (defined $self->kind)?(kind => $self->kind):(),
       (defined $self->sku)?(sku => $self->sku->as_hashref):(),
       (defined $self->plan)?(plan => $self->plan->as_hashref):(),
+      (defined $self->zones)?(zones => $self->zones->as_hashref):(),
     }
   }
 }
@@ -392,6 +411,17 @@ package AzureARM {
         my $parsed = $self->parse_expression($resource->{ plan });
         AzureARM::ParseException->throw(path => "$path.properties", error => "Could not parse expression $resource->{plan}") if (not defined $parsed);
         $resource->{ plan } = $parsed;
+      }
+    }
+
+    if (defined $resource->{ zones }) {
+      if (ref($resource->{ zones }) eq 'ARRAY') {
+        my @vals = map { AzureARM::Value::String->new(Value => $_) } @{ $resource->{ zones } };
+        $resource->{ zones } = AzureARM::Value::Array->new(Value => \@vals);
+      } else {
+        my $parsed = $self->parse_expression($resource->{ zones });
+        AzureARM::ParseException->throw(path => "$path.properties", error => "Could not parse expression $resource->{zones}") if (not defined $parsed);
+        $resource->{ zones } = $parsed;
       }
     }
 
