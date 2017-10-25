@@ -40,15 +40,60 @@ foreach my $file_name (@files) {
 
   my $generated = $arm->as_hashref;
 
+  my $resource_compare = {
+    copy => sub {
+      my ($gen, $ori) = @_;
+      cmp_ok($gen->{name}, 'eq', $ori->{name});
+      equiv_expression($gen->{count}, $ori->{count});
+      cmp_ok($gen->{mode}, 'eq', $ori->{mode});
+      cmp_ok($gen->{batchSize}, 'eq', $ori->{batchSize}); 
+    },
+    name => sub { my ($gen, $ori) = @_; cmp_ok($gen, 'eq', $ori) },
+    type => sub { my ($gen, $ori) = @_; cmp_ok($gen, 'eq', $ori) },
+    properties => sub { my ($gen, $ori) = @_; is_deeply($gen, $ori) },
+    apiVersion => sub { my ($gen, $ori) = @_; cmp_ok($gen, 'eq', $ori) },
+    location => sub { my ($gen, $ori) = @_; cmp_ok($gen, 'eq', $ori) },
+    dependsOn => sub { my ($gen, $ori) = @_; is_deeply($gen, $ori) },
+    kind => sub { my ($gen, $ori) = @_; cmp_ok($gen, 'eq', $ori) },
+    id => sub { my ($gen, $ori) = @_; cmp_ok($gen, 'eq', $ori) },
+    resourceGroup => sub { my ($gen, $ori) = @_; cmp_ok($gen, 'eq', $ori) },
+    comments => sub { my ($gen, $ori) = @_; cmp_ok($gen, 'eq', $ori) },
+    sku => sub { my ($gen, $ori) = @_; is_deeply($gen, $ori) },
+    identity => sub { my ($gen, $ori) = @_; is_deeply($gen, $ori) },
+    plan => sub { my ($gen, $ori) = @_; is_deeply($gen, $ori) },
+    tags => sub { my ($gen, $ori) = @_; is_deeply($gen, $ori) },
+    zones => sub {
+      my ($gen, $ori) = @_;
+      if (ref($gen) eq 'ARRAY') {
+        is_deeply($gen, $ori);
+      } else {
+        equiv_expression($gen, $ori, "Expressions are equivalent");
+      }
+    },
+    condition => sub { my ($gen, $ori) = @_; equiv_expression($gen, $ori, "Expressions are equivalent"); },
+    resources => sub {
+      my ($gen, $ori) = @_;
+      my $i = 0;
+      return if (not defined $gen and not defined $ori);
+      foreach my $i (1..@$gen) {
+        is_deeply($gen->[$i], $ori->[$i]);
+      }
+    },
+  };
+
   cmp_ok($generated->{ resources }->@*, '==', $origin->{ resources }->@*, 'Got the same resources once parsed');
   for (my $i=0; $i <= $generated->{ resources }->@*; $i++) {
     my $generated_r = $generated->{ resources }->[$i];
     my $origin_r    = $origin->{ resources }->[$i];
 
 use Data::Dumper;
-print Dumper($generated_r, $origin_r);
-
-    is_deeply($generated_r, $origin_r);
+    my $seen = { map { ($_ => 0) } keys %$generated_r };
+    cmp_ok(keys %$generated_r, '==', keys %$origin_r, 'Equal number of attributes on a resource');
+    foreach my $k (keys %$resource_compare) {
+      $resource_compare->{ $k }->($generated_r->{ $k }, $origin_r->{ $k });
+      delete $seen->{ $k };
+    }
+    cmp_ok(keys %$seen, '==', 0, 'Compared all attributes ' . (join ',', keys %$seen));
   }
 
   is_deeply($generated->{ parameters }, $origin->{ parameters }, 'Got the same parameters once parsed');

@@ -187,6 +187,20 @@ package AzureARM::ResourceCopy {
     }
   }
 }
+package AzureARM::ResourceIdentity {
+  use Moose;
+  use Moose::Util::TypeConstraints qw/enum/;
+  enum 'AzureARM::ResourceIdentity::Types' => [ 'systemAssigned', 'SystemAssigned' ];
+
+  has type => (is => 'ro', isa => 'AzureARM::ResourceIdentity::Types');
+
+  sub as_hashref {
+    my $self = shift;
+    return {
+      type => $self->type
+    }
+  }
+}
 package AzureARM::Resource {
   use Moose;
   use feature 'postderef';
@@ -201,6 +215,9 @@ package AzureARM::Resource {
   has copy => (is => 'ro', isa => 'AzureARM::ResourceCopy');
   has dependsOn => (is => 'ro', isa => 'ArrayRef[Str]');
   has properties => (is => 'ro', isa => 'AzureARM::Value::Hash|AzureARM::Expression::FirstLevel');
+  has resourceGroup => (is => 'ro', isa => 'AzureARM::Value::String|AzureARM::Expression::FirstLevel');
+  has id => (is => 'ro', isa => 'AzureARM::Value::String|AzureARM::Expression::FirstLevel');
+  has identity => (is => 'ro', isa => 'AzureARM::ResourceIdentity');
   has resources => (
     is => 'ro',
     isa => 'ArrayRef[AzureARM::Resource]',
@@ -229,6 +246,9 @@ package AzureARM::Resource {
       (defined $self->copy)?(copy => $self->copy->as_hashref):(),
       (defined $self->dependsOn)?(dependsOn => $self->dependsOn):(),
       (defined $self->properties)?(properties => $self->properties->as_hashref):(),
+      (defined $self->id)?(id => $self->id->as_hashref):(),
+      (defined $self->identity)?(identity => $self->identity->as_hashref):(),
+      (defined $self->resourceGroup)?(resourceGroup => $self->resourceGroup->as_hashref):(),
       (defined $self->resources)?(resources => [ map { $_->as_hashref } $self->ResourceList ]):(),
       (defined $self->kind)?(kind => $self->kind):(),
       (defined $self->sku)?(sku => $self->sku->as_hashref):(),
@@ -403,6 +423,7 @@ package AzureARM {
     }
 
     $resource->{ sku }  = AzureARM::Value::Hash->new(Value => $resource->{ sku  }) if (defined $resource->{ sku  });
+    $resource->{ identity } = AzureARM::ResourceIdentity->new($resource->{ identity }) if (defined $resource->{ identity });
 
     if (defined $resource->{ plan }) {
       if (ref($resource->{ plan }) eq 'HASH') {
@@ -423,6 +444,18 @@ package AzureARM {
         AzureARM::ParseException->throw(path => "$path.properties", error => "Could not parse expression $resource->{zones}") if (not defined $parsed);
         $resource->{ zones } = $parsed;
       }
+    }
+
+    if (defined $resource->{ resourceGroup }) {
+      my $parsed = $self->parse_expression($resource->{ resourceGroup });
+      $parsed = $resource->{ resourceGroup } if (not defined $parsed);
+      $resource->{ resourceGroup } = $parsed;
+    }
+
+    if (defined $resource->{ id }) {
+      my $parsed = $self->parse_expression($resource->{ id });
+      $parsed = $resource->{ id } if (not defined $parsed);
+      $resource->{ id } = $parsed;
     }
 
     if (defined $resource->{ properties }) {
