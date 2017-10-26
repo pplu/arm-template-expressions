@@ -270,6 +270,8 @@ package AzureARM::ParseException {
   });
 }
 package AzureARM {
+  our $VERSION = '0.01';
+  #ABSTRACT: Parse an AzureARM JSON into an object model
   use Moose;
   use feature 'postderef';
 
