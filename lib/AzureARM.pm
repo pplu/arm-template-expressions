@@ -130,7 +130,7 @@ package AzureARM::Expression::Integer {
     return $self->Value;
   }
 }
-package AzureARM::Parameter {
+package AzureARM::Template::Parameter {
   use Moose;
   use MooseX::StrictConstructor;
   use Moose::Util::TypeConstraints qw/enum/;
@@ -153,7 +153,7 @@ package AzureARM::Parameter {
     }
   }
 }
-package AzureARM::Output {
+package AzureARM::Template::Output {
   use Moose;
   use MooseX::StrictConstructor;
 
@@ -289,7 +289,7 @@ package AzureARM {
   );
   has parameters => (
     is => 'ro',
-    isa => 'HashRef[AzureARM::Parameter]',
+    isa => 'HashRef[AzureARM::Template::Parameter]',
     traits => [ 'Hash' ],
     handles => {
       ParameterCount => 'count',
@@ -309,7 +309,7 @@ package AzureARM {
   );
   has outputs => (
     is => 'ro',
-    isa => 'HashRef[AzureARM::Output]',
+    isa => 'HashRef[AzureARM::Template::Output]',
     traits => [ 'Hash' ],
     handles => {
       OutputCount => 'count',
