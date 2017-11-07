@@ -22,7 +22,9 @@ if (@ARGV) {
   }
 }
 
-use AzureARM;
+use AzureARM::Parser;
+
+my $p = AzureARM::Parser->new;
 
 foreach my $file_name (@files) {
   diag($file_name);
@@ -31,7 +33,7 @@ foreach my $file_name (@files) {
   my $origin = decode_json($content);
   my $arm;
 
-  lives_ok sub { $arm = AzureARM->from_hashref($origin) }, "Parsed $file";
+  lives_ok sub { $arm = $p->from_hashref($origin) }, "Parsed $file";
 
   cmp_ok($arm->VariableCount,  '==', keys %{ $origin->{ variables }  // {} }, 'Got the same number of variables');
   cmp_ok($arm->ParameterCount, '==', keys %{ $origin->{ parameters } // {} }, 'Got the same number of parameters');

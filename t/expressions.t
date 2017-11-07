@@ -2,11 +2,11 @@
 
 use strict;
 use warnings;
-use AzureARM;
+use AzureARM::Parser;
 use Test::More;
 use Data::Dumper;
 
-my $arm = AzureARM->new;
+my $arm = AzureARM::Parser->new;
 
 {
   my $expression = "[variables('var1')]";
