@@ -90,7 +90,7 @@ foreach my $file_name (@files) {
 
 use Data::Dumper;
     my $seen = { map { ($_ => 0) } keys %$generated_r };
-    cmp_ok(keys %$generated_r, '==', keys %$origin_r, 'Equal number of attributes on a resource');
+    cmp_ok(keys %$generated_r, '==', keys %$origin_r, "Equal number of attributes resource $i");
     foreach my $k (keys %$resource_compare) {
       $resource_compare->{ $k }->($generated_r->{ $k }, $origin_r->{ $k });
       delete $seen->{ $k };
