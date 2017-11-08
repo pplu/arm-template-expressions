@@ -275,8 +275,8 @@ package AzureARM {
   use Moose;
   use feature 'postderef';
 
-  has schema => (is => 'ro', isa => 'Str'); #, required => 1);
-  has contentVersion => (is => 'ro', isa => 'Str'); #, required => 1);
+  has schema => (is => 'ro', isa => 'Str', required => 1);
+  has contentVersion => (is => 'ro', isa => 'Str', required => 1);
 
   has resources => (
     is => 'ro',
