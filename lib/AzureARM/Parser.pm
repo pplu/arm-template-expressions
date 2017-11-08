@@ -86,7 +86,7 @@ package AzureARM::Parser {
 
     if (defined $condition) {
       my $parsed = $self->parse_expression($condition);
-      AzureARM::ParseException->throw(path => "$path.condition", error => "Could not parse expression $resource->{condition}") if (not defined $parsed);
+      AzureARM::Parser::Exception->throw(path => "$path.condition", error => "Could not parse expression $resource->{condition}") if (not defined $parsed);
       $resource->{ condition } = $parsed;
     }
 
@@ -108,7 +108,7 @@ package AzureARM::Parser {
         $resource->{ plan } = AzureARM::Value::Hash->new(Value => $resource->{ plan });
       } else {
         my $parsed = $self->parse_expression($resource->{ plan });
-        AzureARM::ParseException->throw(path => "$path.properties", error => "Could not parse expression $resource->{plan}") if (not defined $parsed);
+        AzureARM::Parser::Exception->throw(path => "$path.properties", error => "Could not parse expression $resource->{plan}") if (not defined $parsed);
         $resource->{ plan } = $parsed;
       }
     }
@@ -119,7 +119,7 @@ package AzureARM::Parser {
         $resource->{ zones } = AzureARM::Value::Array->new(Value => \@vals);
       } else {
         my $parsed = $self->parse_expression($resource->{ zones });
-        AzureARM::ParseException->throw(path => "$path.properties", error => "Could not parse expression $resource->{zones}") if (not defined $parsed);
+        AzureARM::Parser::Exception->throw(path => "$path.properties", error => "Could not parse expression $resource->{zones}") if (not defined $parsed);
         $resource->{ zones } = $parsed;
       }
     }
@@ -141,7 +141,7 @@ package AzureARM::Parser {
         $resource->{ properties } = AzureARM::Value::Hash->new(Value => $resource->{ properties });
       } else {
         my $parsed = $self->parse_expression($resource->{ properties });
-        AzureARM::ParseException->throw(path => "$path.properties", error => "Could not parse expression $resource->{properties}") if (not defined $parsed);
+        AzureARM::Parser::Exception->throw(path => "$path.properties", error => "Could not parse expression $resource->{properties}") if (not defined $parsed);
         $resource->{ properties } = $parsed;
       }
     }
@@ -157,7 +157,7 @@ package AzureARM::Parser {
         $resource->{ resources } = $resources;
       } else {
         my $parsed = $self->parse_expression($resource->{ resources });
-        AzureARM::ParseException->throw(path => "$path.resources", error => "Could not parse expression $resource->{resources}") if (not defined $parsed);
+        AzureARM::Parser::Exception->throw(path => "$path.resources", error => "Could not parse expression $resource->{resources}") if (not defined $parsed);
         $resource->{ resources } = $parsed;
       }
     }

@@ -257,18 +257,6 @@ package AzureARM::Resource {
     }
   }
 }
-package AzureARM::ParseException {
-  use Moose;
-  extends 'Throwable::Error';
-
-  has path => (is => 'ro', isa => 'Str', required => 1);
-  has error => (is => 'ro', isa => 'Str', required => 1);
-
-  has message => (is => 'ro', lazy => 1, default => sub {
-    my $self = shift;
-    sprintf "Error on %s: %s", $self->path, $self->error;
-  });
-}
 package AzureARM {
   our $VERSION = '0.01';
   #ABSTRACT: Parse an AzureARM JSON into an object model
