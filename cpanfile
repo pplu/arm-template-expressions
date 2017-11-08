@@ -2,13 +2,13 @@ requires 'Moose';
 requires 'Parse::RecDescent';
 requires 'MooseX::StrictConstructor';
 requires 'Throwable::Error';
+requires 'JSON::MaybeXS';
 
 on test => sub {
   requires 'Test::More';
   requires 'Test::Exception';
   requires 'File::Find';
   requires 'Path::Class';
-  requires 'JSON::MaybeXS';
 };
 
 on develop => sub {
