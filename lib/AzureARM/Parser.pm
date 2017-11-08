@@ -34,36 +34,30 @@ package AzureARM::Parser {
     if (defined $hashref->{ parameters }) {
       my $parameters = {};
       foreach my $param_name (keys $hashref->{ parameters }->%*) {
-        #eval {
-          $parameters->{ $param_name } = AzureARM::Template::Parameter->new($hashref->{ parameters }->{ $param_name });
-        #};
-        #if ($@) { AzureARM::ParseException->throw(path => "parameters.$param_name", error => $@->message) }
+        $parameters->{ $param_name } = $self->parse_parameter(
+          $hashref->{ parameters }->{ $param_name },
+          "parameters.$param_name"
+        );
       }
       push @args, parameters => $parameters;
     }
     if (defined $hashref->{ outputs }) {
       my $outputs = {};
       foreach my $param_name (keys $hashref->{ outputs }->%*) {
-        my $output = $hashref->{ outputs }->{ $param_name };
-        my $orig_value = $output->{ value };
-        my $parsed = $self->parse_expression($output->{ value });
-        if (defined $parsed) {
-          $outputs->{ $param_name } = AzureARM::Template::Output->new(%$output, value => $parsed);
-        } else {
-          $outputs->{ $param_name } = AzureARM::Template::Output->new(%$output, value => AzureARM::Value->new(Value => $orig_value));
-        }
+        $outputs->{ $param_name } = $self->parse_output(
+          $hashref->{ outputs }->{ $param_name },
+          "outputs.$param_name"
+        );
       }
       push @args, outputs => $outputs;
     }
     if (defined $hashref->{ variables }) {
       my $variables = {};
       foreach my $var_name (keys $hashref->{ variables }->%*) {
-        my $expr = $self->parse_expression($hashref->{ variables }->{ $var_name });
-        if (defined $expr) {
-          $variables->{ $var_name } = $expr;
-        } else {
-          $variables->{ $var_name } = AzureARM::Value->new(Value => $hashref->{ variables }->{ $var_name });
-        }
+        $variables->{ $var_name } = $self->parse_variable(
+          $hashref->{ variables }->{ $var_name },
+          "variables.$var_name"
+        );
       }
       push @args, variables => $variables;
     }
@@ -76,8 +70,37 @@ package AzureARM::Parser {
       }
       push @args, resources => $resources;
     }
-    
+
     AzureARM->new(@args);
+  }
+
+  sub parse_output {
+    my ($self, $output, $path) = @_;
+    my $expr = $self->parse_expression($output->{ value });
+    if (defined $expr) {
+      return AzureARM::Template::Output->new(%$output, value => $expr);
+    } else {
+      return AzureARM::Template::Output->new(%$output, value => AzureARM::Value->new(Value => $expr));
+    }
+  }
+
+  sub parse_variable {
+    my ($self, $variable, $path) = @_;
+    my $expr = $self->parse_expression($variable);
+    if (defined $expr) {
+      return $expr;
+    } else {
+      return AzureARM::Value->new(Value => $variable);
+    }
+  }
+
+  sub parse_parameter {
+    my ($self, $resource, $path) = @_;
+    my $p = eval {
+      AzureARM::Template::Parameter->new($resource);
+    };
+    if ($@) { AzureARM::Parser::Exception->throw(path => $path, error => $@->message) }
+    return $p;
   }
 
   sub parse_resource {
