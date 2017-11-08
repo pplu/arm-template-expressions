@@ -273,6 +273,7 @@ package AzureARM {
     is => 'ro',
     isa => 'ArrayRef[AzureARM::Resource]',
     traits => [ 'Array' ],
+    default => sub { [] },
     handles => {
       ResourceCount => 'count',
       ResourceList => 'elements',
