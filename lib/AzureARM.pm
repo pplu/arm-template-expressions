@@ -321,6 +321,10 @@ package AzureARM {
   sub as_hashref {
     my $self = shift;
     my $hashref = {};
+
+    $hashref->{ '$schema' } = $self->schema;
+    $hashref->{ contentVersion } = $self->contentVersion;
+
     if (defined $self->variables) {
       my $v = $hashref->{ variables } = {};
       foreach my $k ($self->VariableNames) {
