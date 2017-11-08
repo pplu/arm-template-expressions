@@ -2,11 +2,11 @@
 
 use strict;
 use warnings;
-use AzureARM;
+use AzureARM::Parser;
 use Test::More;
 use Data::Dumper;
 
-my $arm = AzureARM->new;
+my $arm = AzureARM::Parser->new;
 
 {
   my $expression = "[variables('var1')]";
@@ -88,7 +88,7 @@ my $arm = AzureARM->new;
   cmp_ok($exp->as_string, 'eq', $expression);
   $exp = $exp->Value;
   isa_ok($exp, 'AzureARM::Expression::AccessProperty');
-  is_deeply($exp->Properties, [ 'subscriptionId' ]);
+  is_deeply($exp->Properties, [ '.subscriptionId' ]);
   cmp_ok($exp->On->Function, 'eq', 'subscription');
 }
 
@@ -100,7 +100,7 @@ my $arm = AzureARM->new;
   cmp_ok($exp->as_string, 'eq', $expression);
   $exp = $exp->Value;
   isa_ok($exp, 'AzureARM::Expression::AccessProperty');
-  is_deeply($exp->Properties, [ 'name' ]);
+  is_deeply($exp->Properties, [ '.name' ]);
   cmp_ok($exp->On->Function, 'eq', 'resourceGroup');
 }
 
@@ -112,7 +112,7 @@ my $arm = AzureARM->new;
   cmp_ok($exp->as_string, 'eq', $expression);
   $exp = $exp->Value;
   isa_ok($exp, 'AzureARM::Expression::AccessProperty');
-  is_deeply($exp->Properties, [ 'dnsSettings', 'fqdn' ]);
+  is_deeply($exp->Properties, [ '.dnsSettings', '.fqdn' ]);
   cmp_ok($exp->On->Function, 'eq', 'reference');
   cmp_ok($exp->On->Parameters->[0]->Value, 'eq', 'xxx');
 }
@@ -125,9 +125,20 @@ my $arm = AzureARM->new;
   cmp_ok($exp->as_string, 'eq', $expression);
   $exp = $exp->Value;
   isa_ok($exp, 'AzureARM::Expression::AccessProperty');
-  is_deeply($exp->Properties, [ 'instanceView', 'statuses[0]', 'message' ]);
+  is_deeply($exp->Properties, [ '.instanceView', '.statuses', '[0]', '.message' ]);
   cmp_ok($exp->On->Function, 'eq', 'reference');
   cmp_ok($exp->On->Parameters->[0]->Value, 'eq', 'xxx');
+}
+
+{
+  my $expression = "[split(reference('xxx').instanceView.substatuses[0].message, '')[1]]";
+  diag($expression);
+  my $exp = $arm->parse_expression($expression);
+  isa_ok($exp, 'AzureARM::Expression::FirstLevel');
+  cmp_ok($exp->as_string, 'eq', $expression);
+  $exp = $exp->Value;
+  isa_ok($exp, 'AzureARM::Expression::AccessProperty');
+  is_deeply($exp->Properties, [ '[1]' ]);
 }
 
 {

@@ -22,7 +22,9 @@ if (@ARGV) {
   }
 }
 
-use AzureARM;
+use AzureARM::Parser;
+
+my $p = AzureARM::Parser->new;
 
 foreach my $file_name (@files) {
   diag($file_name);
@@ -31,7 +33,7 @@ foreach my $file_name (@files) {
   my $origin = decode_json($content);
   my $arm;
 
-  lives_ok sub { $arm = AzureARM->from_hashref($origin) }, "Parsed $file";
+  lives_ok sub { $arm = $p->from_json($content) }, "Parsed $file_name";
 
   cmp_ok($arm->VariableCount,  '==', keys %{ $origin->{ variables }  // {} }, 'Got the same number of variables');
   cmp_ok($arm->ParameterCount, '==', keys %{ $origin->{ parameters } // {} }, 'Got the same number of parameters');
@@ -88,7 +90,7 @@ foreach my $file_name (@files) {
 
 use Data::Dumper;
     my $seen = { map { ($_ => 0) } keys %$generated_r };
-    cmp_ok(keys %$generated_r, '==', keys %$origin_r, 'Equal number of attributes on a resource');
+    cmp_ok(keys %$generated_r, '==', keys %$origin_r, "Equal number of attributes resource $i");
     foreach my $k (keys %$resource_compare) {
       $resource_compare->{ $k }->($generated_r->{ $k }, $origin_r->{ $k });
       delete $seen->{ $k };
@@ -113,6 +115,14 @@ use Data::Dumper;
 
 sub equiv_expression {
   my ($expr1, $expr2, $text) = @_;
+  if (not defined $expr1 and not defined $expr1) {
+    ok(1, $text);
+    return;
+  } elsif (defined $expr1 xor defined $expr2) {
+    ok(0, $text);
+    return;
+  }
+
   $expr1 =~ s/\s//g;
   $expr2 =~ s/\s//g;
   if (ref($expr1) eq 'HASH' or ref($expr1) eq 'ARRAY') {
