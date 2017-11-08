@@ -115,6 +115,14 @@ use Data::Dumper;
 
 sub equiv_expression {
   my ($expr1, $expr2, $text) = @_;
+  if (not defined $expr1 and not defined $expr1) {
+    ok(1, $text);
+    return;
+  } elsif (defined $expr1 xor defined $expr2) {
+    ok(0, $text);
+    return;
+  }
+
   $expr1 =~ s/\s//g;
   $expr2 =~ s/\s//g;
   if (ref($expr1) eq 'HASH' or ref($expr1) eq 'ARRAY') {
