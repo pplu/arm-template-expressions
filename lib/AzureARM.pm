@@ -170,6 +170,7 @@ package AzureARM::Template::Output {
 }
 package AzureARM::ResourceCopy {
   use Moose;
+  use MooseX::StrictConstructor;
   use Moose::Util::TypeConstraints qw/enum/;
   enum 'AzureARM::ResourceCopy::Modes' => [ 'serial', 'parallel' ];
   has name => (is => 'ro', isa => 'Str', required => 1);
@@ -189,6 +190,7 @@ package AzureARM::ResourceCopy {
 }
 package AzureARM::ResourceIdentity {
   use Moose;
+  use MooseX::StrictConstructor;
   use Moose::Util::TypeConstraints qw/enum/;
   enum 'AzureARM::ResourceIdentity::Types' => [ 'systemAssigned', 'SystemAssigned' ];
 
@@ -203,6 +205,7 @@ package AzureARM::ResourceIdentity {
 }
 package AzureARM::Resource {
   use Moose;
+  use MooseX::StrictConstructor;
   use feature 'postderef';
 
   has condition => (is => 'ro', isa => 'AzureARM::Expression::FirstLevel');
