@@ -16,6 +16,12 @@ package AzureARM::Parser {
   use AzureARM;
   use Parse::RecDescent;
 
+  sub from_json {
+    my ($class, $json) = @_;
+    require JSON::MaybeXS;
+    $class->from_hashref(JSON::MaybeXS::decode_json($json));
+  }
+
   sub from_hashref {
     my ($class, $hashref) = @_;
     my $self = $class->new;

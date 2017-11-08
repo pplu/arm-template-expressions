@@ -349,12 +349,5 @@ package AzureARM {
 
     return $hashref;
   }
-
-  sub from_json {
-    my ($class, $json) = @_;
-    require JSON::MaybeXS;
-    require AzureARM::Parser;
-    AzureARM::Parser->new->from_hashref(JSON::MaybeXS::decode_json($json));
-  }
 }
 1;
