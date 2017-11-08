@@ -105,6 +105,11 @@ package AzureARM::Parser {
 
   sub parse_resource {
     my ($self, $resource, $path) = @_;
+
+    if (defined $resource->{ dependson }) {
+      $resource->{ dependsOn } = $resource->{ dependson };
+      delete $resource->{ dependson };
+    }
     my $condition = $resource->{ condition };
 
     if (defined $condition) {
