@@ -210,9 +210,16 @@ functioncall: functionname '(' parameter(s? /,/) ')' property_access(s?)
       $return = $function;
     }
   }
-property_access: '.' propaccess
- { $return = $item{ propaccess } }
-propaccess: /\w+(?:\\[\\d+\\]|)/ 
+property_access: arrayaccess | '.' propaccess
+ { if ($item{ arrayaccess }) {
+     $return = $item{ arrayaccess }
+   } else {
+     $return = ".$item{ propaccess }"
+   }
+ }
+propaccess: /\w+/ 
+ { $return = $item{ __PATTERN1__ } }
+arrayaccess: /\\[\\d+\\]/
  { $return = $item{ __PATTERN1__ } }
 stringliteral: /'([^']*)'/
  {

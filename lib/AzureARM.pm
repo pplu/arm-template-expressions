@@ -106,7 +106,7 @@ package AzureARM::Expression::AccessProperty {
   sub as_string {
     my $self = shift;
     my $str = $self->On->as_string;
-    $str .= '.' . (join '.', $self->Properties->@*) if ($self->NumProperties > 0);
+    $str .= (join '', $self->Properties->@*) if ($self->NumProperties > 0);
     return $str;
   }
 }
