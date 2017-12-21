@@ -248,3 +248,61 @@ parameter: stringliteral | numericliteral | functioncall
 
 }
 1;
+### main pod documentation begin ###
+
+=encoding UTF-8
+
+=head1 NAME
+
+AzureARM::Parser - Parse an Azure ARM template into an object model
+
+=head1 SYNOPSIS
+
+  use AzureARM::Parser;
+  my $parser = AzureARM::Parser->new;
+
+  my $arm = $parser->from_json('{ ... }');
+  #$arm is an AzureARM object
+
+  my $arm = $parmser->from_hashref({ ... });
+  #$arm is an AzureARM object
+
+=head1 DESCRIPTION
+
+This module parses an Azure ARM template, converting it into an L<AzureARM>
+object to introspect it
+
+=head1 METHODS
+
+=head2 from_json($string)
+
+Returns an AzureARM object after parsing $string, which should be a valid ARM template
+in JSON format.
+
+Throws exceptions if $string cannot be succesfully transformed into an AzureARM object
+
+=head2 from_hashref($hashref)
+
+Returns an AzureARM object after parsing $hashref. $hashref should be a hashref with 
+the appropiate structure of an ARM template. This method is called by from_json to
+convert the hashref obtained from the JSON into the AzureARM object.
+
+Throws exceptions if $hashref cannot be succesfully transformed into an AzureARM object
+
+=head1 AUTHOR
+    Jose Luis Martinez
+    CPAN ID: JLMARTIN
+    CAPSiDE
+    jlmartinez@capside.com
+
+=head1 COPYRIGHT
+
+(c) 2017 CAPSiDE S.L.
+
+=head1 SEE ALSO
+
+L<AzureARM>
+
+L<https://docs.microsoft.com/en-us/azure/templates/>
+
+=cut

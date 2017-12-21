@@ -343,3 +343,110 @@ package AzureARM {
   }
 }
 1;
+### main pod documentation begin ###
+
+=encoding UTF-8
+
+=head1 NAME
+
+AzureARM - Object model of Azure ARM templates
+
+=head1 SYNOPSIS
+
+  # best practice is to obtain an AzureARM with the AzureARM parser
+  use AzureARM::Parser;
+  my $parser = AzureARM::Parser->new;
+  my $arm = $parser->from_json('{ ... }');
+
+  say "This template has ", $arm->ResourceCount, " resources";
+  say "This template has the following variables: ", join ' ', $arm->VariableNames;
+
+=head1 DESCRIPTION
+
+Object of the AzureARM type  an Azure ARM template, converting it into an L<AzureARM>
+object to introspect it
+
+=head1 ATTRIBUTES
+
+=head2 schema
+
+string containing the '$schema' element of the template (string)
+
+=head2 contentVersion
+
+string containing the contentVersion element of the template (string)
+
+=head2 resources
+
+arrayref of AzureARM::Resource objects
+
+=head2 ResourceCount
+
+number of resources in the template
+
+=head2 ResourceList
+
+list of resources in the template
+
+=head2 parameters
+
+hashref of AzureARM::Template::Parameter objects
+
+=head2 ParameterCount
+
+number of parameters in the template
+
+=head2 ParameterNames
+
+list of names of parameters
+
+=head2 Parameter($name)
+
+accesses the parameter of name $name. Returns an AzureARM::Template::Parameter object
+
+=head2 variables
+
+hashref of AzureARM::Value objects. Keys are the names of the variables.
+
+=head2 VariableCount
+
+number of variables declared
+
+=head2 VariableNames
+
+list of the names of the variables declared
+
+=head2 Variable($name)
+
+returns the AzureARM::Value object that corresponds to the variable named $name
+
+=head2 outputs
+
+hashref of AzureARM::Template::Output objects. Keys are the names of the outputs
+
+=head2 OutputCount
+
+number of outputs declared
+
+=head2 OutputNames
+
+list of the names of the outputs declared
+
+=head2 Output($name)
+
+returns the AzureARM::Template::Output object that corresponds to the output named $name
+
+=head1 AUTHOR
+
+    Jose Luis Martinez
+    CPAN ID: JLMARTIN
+    CAPSiDE
+    jlmartinez@capside.com
+
+=head1 COPYRIGHT and LICENSE
+
+(c) 2017 CAPSiDE S.L.
+
+This code is distributed under the Apache v2 License
+
+=cut
