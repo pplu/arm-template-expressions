@@ -26,6 +26,25 @@ use AzureARM::Parser;
 
 my $p = AzureARM::Parser->new;
 
+my $compare_str = sub {
+  my ($gen, $ori) = @_;
+
+  if (not defined $gen and not defined $ori) {
+    pass "generated and original are undefined";
+  } elsif (defined $gen and not defined $ori) {
+    fail "generated is $gen and original is undefined";
+  } elsif (not defined $gen and defined $ori) {
+    fail "generated is not defined and original $ori";
+  } else {
+    cmp_ok($gen, 'eq', $ori);
+  }
+};
+
+my $compare_deeply = sub {
+  my ($gen, $ori) = @_;
+  is_deeply($gen, $ori);
+};
+
 foreach my $file_name (@files) {
   diag($file_name);
   my $file = Path::Class::File->new($file_name);
@@ -45,25 +64,25 @@ foreach my $file_name (@files) {
   my $resource_compare = {
     copy => sub {
       my ($gen, $ori) = @_;
-      cmp_ok($gen->{name}, 'eq', $ori->{name});
+      $compare_str->($gen->{name}, $ori->{name});
       equiv_expression($gen->{count}, $ori->{count});
-      cmp_ok($gen->{mode}, 'eq', $ori->{mode});
-      cmp_ok($gen->{batchSize}, 'eq', $ori->{batchSize}); 
+      $compare_str->($gen->{mode}, $ori->{mode});
+      $compare_str->($gen->{batchSize}, $ori->{batchSize});
     },
-    name => sub { my ($gen, $ori) = @_; cmp_ok($gen, 'eq', $ori) },
-    type => sub { my ($gen, $ori) = @_; cmp_ok($gen, 'eq', $ori) },
-    properties => sub { my ($gen, $ori) = @_; is_deeply($gen, $ori) },
-    apiVersion => sub { my ($gen, $ori) = @_; cmp_ok($gen, 'eq', $ori) },
-    location => sub { my ($gen, $ori) = @_; cmp_ok($gen, 'eq', $ori) },
-    dependsOn => sub { my ($gen, $ori) = @_; is_deeply($gen, $ori) },
-    kind => sub { my ($gen, $ori) = @_; cmp_ok($gen, 'eq', $ori) },
-    id => sub { my ($gen, $ori) = @_; cmp_ok($gen, 'eq', $ori) },
-    resourceGroup => sub { my ($gen, $ori) = @_; cmp_ok($gen, 'eq', $ori) },
-    comments => sub { my ($gen, $ori) = @_; cmp_ok($gen, 'eq', $ori) },
-    sku => sub { my ($gen, $ori) = @_; is_deeply($gen, $ori) },
-    identity => sub { my ($gen, $ori) = @_; is_deeply($gen, $ori) },
-    plan => sub { my ($gen, $ori) = @_; is_deeply($gen, $ori) },
-    tags => sub { my ($gen, $ori) = @_; is_deeply($gen, $ori) },
+    name => $compare_str,
+    type => $compare_str,
+    properties => $compare_deeply,
+    apiVersion => $compare_str,
+    location => $compare_str,
+    dependsOn => $compare_deeply,
+    kind => $compare_str,
+    id => $compare_str,
+    resourceGroup => $compare_str,
+    comments => $compare_str,
+    sku => $compare_deeply,
+    identity => $compare_deeply,
+    plan => $compare_deeply,
+    tags => $compare_deeply,
     zones => sub {
       my ($gen, $ori) = @_;
       if (ref($gen) eq 'ARRAY') {
