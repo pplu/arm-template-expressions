@@ -115,6 +115,13 @@ package AzureARM::Builder {
     lazy => 1,
     builder => '_build_model_metadata'
   );
+  sub model_metadata_list { sort keys %{ shift->model_metadata } }
+  sub model {
+    my ($self, $model) = @_;
+    my $r = $self->model_metadata->{ $model };
+    die "Can't find model $model" if (not defined $r);
+    return $r
+  }
 
   sub _build_model_metadata {
     my $self = shift;
@@ -137,25 +144,31 @@ package AzureARM::Builder {
     my $self = shift;
 
     my @errors;
-    foreach my $resource (keys %{ $self->model_metadata }) {
-      say "Processing $resource";
+    foreach my $model ($self->model_metadata_list) {
+      say "Processing $model";
 
       eval {
-        my $md = $self->model_metadata->{ $resource };
-        my $model = $self->get_object_model_for($md->{ resource_url });
-        my $b = AzureARM::Builder::Resource->new(
-          base_schema => $model,
-          resource_path => $md->{ resource_path },
-        );
-        $b->build;
+        $self->build_one($model);
       };
       if ($@) {
         print $@;
-        push @errors, "Error processing $resource";
+        push @errors, "Error processing $model";
       }
     }
     say "Errors: ";
     say $_ for @errors;
+  }
+
+  sub build_one {
+    my ($self, $modelname) = @_;
+
+    my $md = $self->model($modelname);
+    my $model = $self->get_object_model_for($md->{ resource_url });
+    my $b = AzureARM::Builder::Resource->new(
+      base_schema => $model,
+      resource_path => $md->{ resource_path },
+    );
+    $b->build;
   }
 }
 1;
