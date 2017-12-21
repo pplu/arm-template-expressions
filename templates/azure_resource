@@ -1,5 +1,9 @@
 package [% c.perl_package %];
+  use Moose;
 
-
+[%- FOREACH name=c.property_list %]
+  [%- p = c.property(name) %]
+  has [% name %] => (is => 'ro'[% IF (p.required) %], required => 1[% END %]);
+[%- END %]
 
 1;

@@ -1,3 +1,11 @@
+package AzureARM::Builder::Property {
+  use Moose;
+
+  has schema => (is => 'ro', isa => 'JSONSchema::ObjectModel::Definition');
+  has name => (is => 'ro', isa => 'Str', required => 1);
+  has required => (is => 'ro', isa => 'Bool', required => 1);
+
+}
 package AzureARM::Builder::Resource {
   use Moose;
   with 'AzureARM::Builder::TemplateProcessor';
@@ -17,6 +25,24 @@ package AzureARM::Builder::Resource {
     my $self = shift;
     $self->resolve_path($self->resource_path);
   });
+
+  has properties => (is => 'ro', lazy => 1, isa => 'HashRef[AzureARM::Builder::Property]', builder => '_build_properties');
+  sub property { shift->properties->{ shift } }
+  sub property_list { sort keys %{ shift->properties } }
+
+  sub _build_properties {
+    my $self = shift;
+    my $props = {};
+    foreach my $property (keys %{ $self->schema->properties }) {
+      my $required = grep { $_ eq $property } @{ $self->schema->required };
+      $props->{ $property } = AzureARM::Builder::Property->new(
+        required => $required,
+        name => $property,
+        schema => $self->schema->properties->{ $property },
+      );
+    }
+    return $props;
+  }
 
   sub namespace { 'AzureARM::Resource' }
 
