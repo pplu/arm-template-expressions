@@ -1,0 +1,5 @@
+package [% c.perl_package %];
+
+
+
+1;

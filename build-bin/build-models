@@ -1,0 +1,12 @@
+#!/usr/bin/env perl
+
+use AzureARM::Builder;
+
+my $build_only = $ARGV[0];
+
+my $b = AzureARM::Builder->new;
+if (defined $build_only) {
+  $b->build_one($build_only);
+} else {
+  $b->build_all;
+}
