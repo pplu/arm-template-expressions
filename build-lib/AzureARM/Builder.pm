@@ -1,10 +1,64 @@
 package AzureARM::Builder::Property {
   use Moose;
+  use Data::Dumper;
 
   has schema => (is => 'ro', isa => 'JSONSchema::ObjectModel::Definition');
+  has resource => (is => 'ro', isa => 'AzureARM::Builder::Resource', required => 1);
   has name => (is => 'ro', isa => 'Str', required => 1);
   has required => (is => 'ro', isa => 'Bool', required => 1);
 
+  has is_object => (is => 'ro', isa => 'Bool', lazy => 1, default => sub { shift->schema->type eq 'object' });
+
+  our $expression_url = 'https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#/definitions/expression';
+
+  has can_be_expression => (is => 'ro', isa => 'Bool', lazy => 1, default => sub {
+    my $self = shift;
+
+    return defined $self->schema->oneOf && 1 == grep { defined $_->ref and $_->ref eq $expression_url } @{ $self->schema->oneOf };
+  });
+
+  has type_raw => (is => 'ro', isa => 'JSONSchema::ObjectModel::Definition', lazy => 1, default => sub {
+    my $self = shift;
+
+    if (defined $self->schema->oneOf) {
+      my @list = grep { $_->ref ne $expression_url } @{ $self->schema->oneOf };
+      return $list[0];
+    } else {
+      return $self->schema;
+    }
+  });
+
+  has type => (is => 'ro', isa => 'JSONSchema::ObjectModel::Definition', lazy => 1, default => sub {
+    my $self = shift;
+      return $self->resource->resolve_path($self->type_raw->ref) if (defined $self->type_raw->ref);
+      return $self->type_raw;
+  });
+
+  sub perl_type {
+    my $self = shift;
+
+    my $type;
+    if (defined $self->type->type) {
+      $type = $self->type->type;
+    } elsif (defined $self->type->enum) {
+      $type = 'enum';
+    } else {
+      die "No type for object " . $self->name . ' ' . Dumper($self->type);
+    }
+
+    if ($type eq 'object') {
+      return 'OBJECT';
+    }
+
+    my $t = {
+      string => 'Str',
+      enum => 'Str',
+    }->{ $type };
+
+    die "No mapping for $type" if (not defined $t);
+
+    return $t;
+  }
 }
 package AzureARM::Builder::Resource {
   use Moose;
@@ -17,8 +71,16 @@ package AzureARM::Builder::Resource {
     my ($self, $path) = @_;
     if ($path =~ m|^/resourceDefinitions/(.*)|) {
       my $def_name = $1;
-      return $self->base_schema->resourceDefinitions->{ $def_name };
+      my $res = $self->base_schema->resourceDefinitions->{ $def_name };
+      die "Can't find resource definition $def_name" if (not defined $res);
+      return $res;
+    } elsif ($path =~ m|^#/definitions/(.*)|) {
+      my $def_name = $1;
+      my $res = $self->base_schema->definitions->{ $def_name };
+      die "Can't find definition $def_name" if (not defined $res);
+      return $res;
     }
+    die "Don't know how to resolve $path";
   }
 
   has schema => (is => 'ro', lazy => 1, isa => 'Defined', default => sub {
@@ -27,8 +89,16 @@ package AzureARM::Builder::Resource {
   });
 
   has properties => (is => 'ro', lazy => 1, isa => 'HashRef[AzureARM::Builder::Property]', builder => '_build_properties');
-  sub property { shift->properties->{ shift } }
-  sub property_list { sort keys %{ shift->properties } }
+  sub property {
+    my ($self, $prop) = @_;
+    my $p = $self->properties->{ $prop };
+    die "Can't find property $prop" if (not defined $p);
+    return $p;
+  }
+  sub property_list {
+    my $self = shift;
+    sort keys %{ $self->properties }
+  }
 
   sub _build_properties {
     my $self = shift;
@@ -39,6 +109,7 @@ package AzureARM::Builder::Resource {
         required => $required,
         name => $property,
         schema => $self->schema->properties->{ $property },
+        resource => $self,
       );
     }
     return $props;
