@@ -47,7 +47,9 @@ package AzureARM::Builder::Property {
     }
 
     if ($type eq 'object') {
-      return 'OBJECT';
+      my $type_name = $self->type_raw->ref;
+      $type_name =~ s|^#/definitions/||;
+      return $type_name;
     }
 
     my $t = {
@@ -115,20 +117,19 @@ package AzureARM::Builder::Resource {
     return $props;
   }
 
-  sub namespace { 'AzureARM::Resource' }
+  has base_namespace => (is => 'ro', isa => 'ArrayRef[Str]', default => sub { [ 'AzureARM', 'Resource' ] });
 
-  sub name {
+  has namespace => (is => 'ro', isa => 'ArrayRef[Str]', lazy => 1, default => sub {
     my $self = shift;
     my $name = $self->schema->properties->{ type }->enum->[0];
-    $name =~ s/\./::/g;
-    $name =~ s/\//::/g;
-    return $name;
-  }
+    my @namespace = map { split /\./, $_ } split /\//, $name;
+    return \@namespace;
+  });
 
-  sub perl_package {
+  has perl_package => (is => 'ro', isa => 'Str', lazy => 1, default => sub {
     my $self = shift;
-    sprintf "%s::%s", $self->namespace, $self->name;
-  }
+    join '::', @{ $self->base_namespace }, @{ $self->namespace };
+  });
 
   sub build {
     my $self = shift;
