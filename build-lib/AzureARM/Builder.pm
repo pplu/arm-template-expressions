@@ -1,13 +1,34 @@
+package AzureARM::Bulder::Error {
+  use Moose;
+  extends 'Throwable::Error';
+
+}
+package AzureARM::Builder::Object {
+  use Moose;
+
+  has schema => (is => 'ro', isa => 'JSONSchema::ObjectModel::Definition', required => 1);
+  has name => (is => 'ro', isa => 'Str', required => 1);
+  has base_namespace => (is => 'ro', isa => 'ArrayRef[Str]', required => 1);
+
+  has perl_package => (is => 'ro', isa => 'Str', lazy => 1, default => sub {
+    my $self = shift;
+    join '::', @{ $self->base_namespace }, $self->name;
+  });
+
+  has properties => (is => 'ro', lazy => 1, isa => 'HashRef[AzureARM::Builder::Property]', builder => '_build_properties');
+
+  sub _build_properties {
+
+  };
+}
 package AzureARM::Builder::Property {
   use Moose;
   use Data::Dumper;
 
-  has schema => (is => 'ro', isa => 'JSONSchema::ObjectModel::Definition');
+  has schema => (is => 'ro', isa => 'JSONSchema::ObjectModel::Definition', required => 1);
   has resource => (is => 'ro', isa => 'AzureARM::Builder::Resource', required => 1);
   has name => (is => 'ro', isa => 'Str', required => 1);
   has required => (is => 'ro', isa => 'Bool', required => 1);
-
-  has is_object => (is => 'ro', isa => 'Bool', lazy => 1, default => sub { shift->schema->type eq 'object' });
 
   our $expression_url = 'https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#/definitions/expression';
 
@@ -28,10 +49,36 @@ package AzureARM::Builder::Property {
     }
   });
 
+  has is_referenced_type => (is => 'ro', isa => 'Bool', lazy => 1, default => sub {
+    my $self = shift;
+    return defined $self->type_raw->ref;
+  });
+
   has type => (is => 'ro', isa => 'JSONSchema::ObjectModel::Definition', lazy => 1, default => sub {
     my $self = shift;
       return $self->resource->resolve_path($self->type_raw->ref) if (defined $self->type_raw->ref);
       return $self->type_raw;
+  });
+  
+  has is_object => (is => 'ro', isa => 'Bool', lazy => 1, default => sub { my $self = shift; $self->type->type eq 'object' });
+  has object_def => (is => 'ro', isa => 'AzureARM::Builder::Object', lazy => 1, default => sub {
+    my $self = shift;
+
+    my $schema = $self->type;
+
+    my $type_name;
+    if ($self->is_referenced_type) {
+      $type_name = $self->type_raw->ref;
+      $type_name =~ s|^#/definitions/||;
+    } else {
+      $type_name = $self->name;
+    }
+ 
+    AzureARM::Builder::Object->new(
+      schema => $schema,
+      name => $type_name,
+      base_namespace => $self->resource->namespace,
+    );
   });
 
   sub perl_type {
@@ -46,18 +93,17 @@ package AzureARM::Builder::Property {
       die "No type for object " . $self->name . ' ' . Dumper($self->type);
     }
 
-    if ($type eq 'object') {
-      my $type_name = $self->type_raw->ref;
-      $type_name =~ s|^#/definitions/||;
-      return $type_name;
-    }
-
     my $t = {
-      string => 'Str',
-      enum => 'Str',
+      string => sub { 'Str' },
+      enum => sub { 'Str' },
+      integer => sub { 'Int' },
+      boolean => sub { 'Bool' },
+      object => sub { my $o = shift; $o->object_def->perl_package },
     }->{ $type };
 
     die "No mapping for $type" if (not defined $t);
+
+    $t = $t->($self);
 
     return $t;
   }
@@ -71,6 +117,9 @@ package AzureARM::Builder::Resource {
 
   sub resolve_path {
     my ($self, $path) = @_;
+
+    AzureARM::Bulder::Error->throw("Passed an empty path to resolve_path") if (not defined $path or $path eq '');
+
     if ($path =~ m|^/resourceDefinitions/(.*)|) {
       my $def_name = $1;
       my $res = $self->base_schema->resourceDefinitions->{ $def_name };
@@ -89,6 +138,20 @@ package AzureARM::Builder::Resource {
     my $self = shift;
     $self->resolve_path($self->resource_path);
   });
+
+  has objects => (is => 'ro', lazy => 1, isa => 'HashRef[AzureARM::Builder::Object]', default => sub { 
+    my $self = shift;
+    my $objects = {};
+    $self->_scan_for_objects($objects);
+    return $objects;
+  });
+
+  sub _build_objects {
+    my ($self) = @_;
+    my $objects = {};
+
+    return $objects;
+  }
 
   has properties => (is => 'ro', lazy => 1, isa => 'HashRef[AzureARM::Builder::Property]', builder => '_build_properties');
   sub property {
@@ -123,12 +186,12 @@ package AzureARM::Builder::Resource {
     my $self = shift;
     my $name = $self->schema->properties->{ type }->enum->[0];
     my @namespace = map { split /\./, $_ } split /\//, $name;
-    return \@namespace;
+    return [ @{ $self->base_namespace }, @namespace ];
   });
 
   has perl_package => (is => 'ro', isa => 'Str', lazy => 1, default => sub {
     my $self = shift;
-    join '::', @{ $self->base_namespace }, @{ $self->namespace };
+    join '::', @{ $self->namespace };
   });
 
   sub build {
