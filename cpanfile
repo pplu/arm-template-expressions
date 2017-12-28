@@ -1,3 +1,4 @@
+requires 'perl', '5.020';
 requires 'Moose';
 requires 'Parse::RecDescent';
 requires 'MooseX::StrictConstructor';
