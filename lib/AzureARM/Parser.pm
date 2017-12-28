@@ -13,6 +13,7 @@ package AzureARM::Parser::Exception {
 package AzureARM::Parser {
   use Moose;
   use feature 'postderef';
+  no warnings 'experimental::postderef';
   use AzureARM;
   use Parse::RecDescent;
 

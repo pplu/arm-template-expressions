@@ -85,6 +85,7 @@ package AzureARM::Expression::Function {
   use Moose;
   extends 'AzureARM::Expression';
   use feature 'postderef';
+  no warnings 'experimental::postderef';
 
   has 'Function' => (is => 'ro', isa => 'Str', required => 1);
   has 'Parameters' => (is => 'ro', isa => 'ArrayRef[AzureARM::Expression]');
@@ -99,6 +100,7 @@ package AzureARM::Expression::AccessProperty {
   use Moose;
   extends 'AzureARM::Expression';
   use feature 'postderef';
+  no warnings 'experimental::postderef';
 
   has Properties => (is => 'ro', isa => 'ArrayRef[Str]', required => 1, traits => [ 'Array' ], handles => { NumProperties => 'count' });
   has On => (is => 'ro', isa => 'AzureARM::Expression', required => 1);
@@ -207,6 +209,7 @@ package AzureARM::Resource {
   use Moose;
   use MooseX::StrictConstructor;
   use feature 'postderef';
+  no warnings 'experimental::postderef';
 
   has condition => (is => 'ro', isa => 'AzureARM::Expression::FirstLevel');
   has apiVersion => (is => 'ro', isa => 'Str', required => 1);
@@ -265,6 +268,7 @@ package AzureARM {
   #ABSTRACT: Parse an AzureARM JSON into an object model
   use Moose;
   use feature 'postderef';
+  no warnings 'experimental::postderef';
 
   has schema => (is => 'ro', isa => 'Str', required => 1);
   has contentVersion => (is => 'ro', isa => 'Str', required => 1);
