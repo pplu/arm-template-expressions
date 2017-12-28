@@ -13,6 +13,7 @@ package AzureARM::Parser::Exception {
 package AzureARM::Parser {
   use Moose;
   use feature 'postderef';
+  no warnings 'experimental::postderef';
   use AzureARM;
   use Parse::RecDescent;
 
@@ -264,7 +265,7 @@ AzureARM::Parser - Parse an Azure ARM template into an object model
   my $arm = $parser->from_json('{ ... }');
   #$arm is an AzureARM object
 
-  my $arm = $parmser->from_hashref({ ... });
+  my $arm = $parser->from_hashref({ ... });
   #$arm is an AzureARM object
 
 =head1 DESCRIPTION
