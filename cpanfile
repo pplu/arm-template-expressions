@@ -15,6 +15,7 @@ on test => sub {
 on develop => sub {
   requires 'Mojo::UserAgent::Cached';
   requires 'MooseX::DataModel';
+  requires 'Throwable::Error';
   requires 'Template';
   requires 'File::Slurp';
 
