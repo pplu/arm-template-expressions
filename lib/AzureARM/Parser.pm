@@ -132,6 +132,16 @@ package AzureARM::Parser {
     $resource->{ sku }  = AzureARM::Value::Hash->new(Value => $resource->{ sku  }) if (defined $resource->{ sku  });
     $resource->{ identity } = AzureARM::ResourceIdentity->new($resource->{ identity }) if (defined $resource->{ identity });
 
+    if (defined $resource->{ tags }) {
+      if (ref($resource->{ tags }) eq 'HASH') {
+        $resource->{ tags } = AzureARM::Value::Hash->new(Value => $resource->{ tags });
+      } else {
+        my $parsed = $self->parse_expression($resource->{ tags });
+        AzureARM::Parser::Exception->throw(path => "$path.properties", error => "Could not parse expression $resource->{tags}") if (not defined $parsed);
+        $resource->{ tags } = $parsed;
+      }
+    }
+
     if (defined $resource->{ plan }) {
       if (ref($resource->{ plan }) eq 'HASH') {
         $resource->{ plan } = AzureARM::Value::Hash->new(Value => $resource->{ plan });
