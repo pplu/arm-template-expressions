@@ -37,10 +37,11 @@ package AzureARM::Value::Hash {
   use Moose;
   extends 'AzureARM::Value';
   has '+Value' => (isa => 'HashRef');
+  use Scalar::Util qw/blessed/;
 
   sub as_hashref {
     my $self = shift;
-    return $self->Value;
+    return { map { ($_ => (blessed($self->Value->{ $_ }) ? $self->Value->{ $_ }->as_hashref(@_) : $self->Value->{ $_ } ) ) } keys %{ $self->Value } };
   }
 }
 package AzureARM::Value::Array {
@@ -166,7 +167,7 @@ package AzureARM::Template::Output {
     my $self = shift;
     return {
       type => $self->type,
-      value => $self->value->as_hashref,
+      value => $self->value->as_hashref(@_),
     }
   }
 }
@@ -184,7 +185,7 @@ package AzureARM::ResourceCopy {
     my $self = shift;
     return {
       name => $self->name,
-      count => $self->count->as_hashref,
+      count => $self->count->as_hashref(@_),
       (defined $self->mode)?(mode => $self->mode):(),
       (defined $self->batchSize)?(batchSize => $self->batchSize):(),
     }
@@ -242,24 +243,24 @@ package AzureARM::Resource {
     my $self = shift;
 
     return {
-      (defined $self->condition)?(condition => $self->condition->as_hashref):(),
+      (defined $self->condition)?(condition => $self->condition->as_hashref(@_)):(),
       apiVersion => $self->apiVersion,
       type => $self->type,
       name => $self->name,
       (defined $self->location)?(location => $self->location):(),
       (defined $self->tags)?(tags => $self->tags->as_hashref):(),
       (defined $self->comments)?(comments => $self->comments):(),
-      (defined $self->copy)?(copy => $self->copy->as_hashref):(),
+      (defined $self->copy)?(copy => $self->copy->as_hashref(@_)):(),
       (defined $self->dependsOn)?(dependsOn => $self->dependsOn):(),
-      (defined $self->properties)?(properties => $self->properties->as_hashref):(),
-      (defined $self->id)?(id => $self->id->as_hashref):(),
-      (defined $self->identity)?(identity => $self->identity->as_hashref):(),
-      (defined $self->resourceGroup)?(resourceGroup => $self->resourceGroup->as_hashref):(),
-      (defined $self->resources)?(resources => [ map { $_->as_hashref } $self->ResourceList ]):(),
+      (defined $self->properties)?(properties => $self->properties->as_hashref(@_)):(),
+      (defined $self->id)?(id => $self->id->as_hashref(@_)):(),
+      (defined $self->identity)?(identity => $self->identity->as_hashref(@_)):(),
+      (defined $self->resourceGroup)?(resourceGroup => $self->resourceGroup->as_hashref(@_)):(),
+      (defined $self->resources)?(resources => [ map { $_->as_hashref(@_) } $self->ResourceList ]):(),
       (defined $self->kind)?(kind => $self->kind):(),
-      (defined $self->sku)?(sku => $self->sku->as_hashref):(),
-      (defined $self->plan)?(plan => $self->plan->as_hashref):(),
-      (defined $self->zones)?(zones => $self->zones->as_hashref):(),
+      (defined $self->sku)?(sku => $self->sku->as_hashref(@_)):(),
+      (defined $self->plan)?(plan => $self->plan->as_hashref(@_)):(),
+      (defined $self->zones)?(zones => $self->zones->as_hashref(@_)):(),
     }
   }
 }
@@ -317,30 +318,29 @@ package AzureARM {
   sub as_hashref {
     my $self = shift;
     my $hashref = {};
-
     $hashref->{ '$schema' } = $self->schema;
     $hashref->{ contentVersion } = $self->contentVersion;
 
     if (defined $self->variables) {
       my $v = $hashref->{ variables } = {};
       foreach my $k ($self->VariableNames) {
-        $v->{ $k } = $self->Variable($k)->as_hashref;
+        $v->{ $k } = $self->Variable($k)->as_hashref($self, @_);
       }
     }
     if (defined $self->parameters) {
       my $v = $hashref->{ parameters } = {};
       foreach my $k ($self->ParameterNames) {
-        $v->{ $k } = $self->Parameter($k)->as_hashref;
+        $v->{ $k } = $self->Parameter($k)->as_hashref($self, @_);
       }
     }
     if (defined $self->outputs) {
       my $v = $hashref->{ outputs } = {};
       foreach my $k ($self->OutputNames) {
-        $v->{ $k } = $self->Output($k)->as_hashref;
+        $v->{ $k } = $self->Output($k)->as_hashref($self, @_);
       }
     }
     $hashref->{ resources } = [ map {
-      $_->as_hashref
+      $_->as_hashref($self, @_)
     } $self->ResourceList ];
 
     return $hashref;
