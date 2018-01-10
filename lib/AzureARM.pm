@@ -217,7 +217,7 @@ package AzureARM::Resource {
   has type => (is => 'ro', isa => 'Str', required => 1);
   has name => (is => 'ro', isa => 'Str', required => 1);
   has location => (is => 'ro', isa => 'Str');
-  has tags => (is => 'ro', isa => 'HashRef'); 
+  has tags => (is => 'ro', isa => 'AzureARM::Value::Hash|AzureARM::Expression::FirstLevel'); 
   has comments => (is => 'ro', isa => 'Str');
   has copy => (is => 'ro', isa => 'AzureARM::ResourceCopy');
   has dependsOn => (is => 'ro', isa => 'ArrayRef[Str]');
@@ -248,7 +248,7 @@ package AzureARM::Resource {
       type => $self->type,
       name => $self->name,
       (defined $self->location)?(location => $self->location):(),
-      (defined $self->tags)?(tags => $self->tags):(),
+      (defined $self->tags)?(tags => $self->tags->as_hashref):(),
       (defined $self->comments)?(comments => $self->comments):(),
       (defined $self->copy)?(copy => $self->copy->as_hashref(@_)):(),
       (defined $self->dependsOn)?(dependsOn => $self->dependsOn):(),
