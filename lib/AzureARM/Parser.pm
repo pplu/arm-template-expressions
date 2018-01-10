@@ -197,6 +197,10 @@ package AzureARM::Parser {
     } elsif (ref($value) eq 'JSON::PP::Boolean') {
       return 1 if ($value == 1);
       return 0 if ($value == 0);
+    } elsif (blessed($value)) {
+      # if there is already a subclass of AzureARM::Value planted, just pass it back
+      return $value if ($value->isa('AzureARM::Value'));
+      die "Don't know how to handle a non-AzureARM::Value object";
     } elsif (looks_like_number($value)) {
       return AzureARM::Value::Integer->new(Value => $value) if ($value =~ m/^-?[0-9]+$/);
       return AzureARM::Value::Number->new(Value => $value);
