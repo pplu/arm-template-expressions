@@ -16,17 +16,39 @@ package AzureARM::Builder::Object {
   });
 
   has properties => (is => 'ro', lazy => 1, isa => 'HashRef[AzureARM::Builder::Property]', builder => '_build_properties');
+  sub property {
+    my ($self, $prop) = @_;
+    my $p = $self->properties->{ $prop };
+    die "Can't find property $prop" if (not defined $p);
+    return $p;
+  }
+  sub property_list {
+    my $self = shift;
+    sort keys %{ $self->properties }
+  }
 
   sub _build_properties {
-
-  };
+    my $self = shift;
+    my $props = {};
+    foreach my $property (keys %{ $self->schema->properties }) {
+      my $required = grep { $_ eq $property } @{ $self->schema->required };
+      $props->{ $property } = AzureARM::Builder::Property->new(
+        required => $required,
+        name => $property,
+        schema => $self->schema->properties->{ $property },
+        object => $self,
+      );
+    }
+    return $props;
+  }
 }
 package AzureARM::Builder::Property {
   use Moose;
   use Data::Dumper;
 
   has schema => (is => 'ro', isa => 'JSONSchema::ObjectModel::Definition', required => 1);
-  has resource => (is => 'ro', isa => 'AzureARM::Builder::Resource', required => 1);
+  has resource => (is => 'ro', isa => 'AzureARM::Builder::Resource', required => 0);
+  has object   => (is => 'ro', isa => 'AzureARM::Builder::Object', required => 0);
   has name => (is => 'ro', isa => 'Str', required => 1);
   has required => (is => 'ro', isa => 'Bool', required => 1);
 
