@@ -4,7 +4,7 @@ use Test::More;
 use Module::Find;
 use AzureARM::Parser;
 
-use lib '../auto-lib';
+use lib 'auto-lib';
 
 my @modules = Module::Find::findallmod 'AzureARM::Resource';
 
