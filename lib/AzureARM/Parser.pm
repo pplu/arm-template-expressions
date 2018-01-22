@@ -166,8 +166,24 @@ package AzureARM::Parser {
     if (defined $resource->{ id }) {
       $resource->{ id } = $self->expression_or_value($resource->{ id });
     }
+    
+    my $class = $self->class_for_type($resource->{ type });
+    $self->load_resource_class($class);
 
-    return AzureARM::Resource->new($resource);
+    return $class->new($resource);
+  }
+
+  sub class_for_type {
+    my ($class, $type) = @_;
+    my @namespace = ('AzureARM', 'Resource', map { split /\./, $_ } split /\//, $type);
+    my $resource_class = join '::', @namespace;
+    return $resource_class;
+  }
+
+  use Module::Runtime qw/require_module/;
+  sub load_resource_class {
+    my ($class, $type) = @_;
+    require_module($class);
   }
 
   sub expression_or_value {
