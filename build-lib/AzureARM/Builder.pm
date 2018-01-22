@@ -99,6 +99,7 @@ package AzureARM::Builder::Property {
       integer => sub { 'Int' },
       boolean => sub { 'Bool' },
       object => sub { my $o = shift; $o->object_def->perl_package },
+      array => sub { 'ArrayRef' },
     }->{ $type };
 
     die "No mapping for $type" if (not defined $t);
