@@ -2,8 +2,7 @@
 
 use strict;
 use warnings;
-use feature 'postderef';
-
+use feature 'postderef', 'current_sub';
 use Test::More;
 use Test::Exception;
 use File::Find;
@@ -45,6 +44,28 @@ my $compare_deeply = sub {
   is_deeply($gen, $ori);
 };
 
+my $compare_recursive = sub {
+  my ($gen, $ori) = @_;
+
+  if (ref($gen) eq 'ARRAY') {
+    cmp_ok(scalar(@$gen), '==', scalar(@$ori));
+    for(my $i = 0; $i <= scalar(@$gen); $i++) {
+      __SUB__->($gen->[ $i ], $ori->[ $i ]);
+    }
+  } elsif (ref($gen) eq 'HASH') {
+    cmp_ok(scalar(keys %$gen), '==', scalar(keys %$ori));
+    foreach my $k (keys %$gen) {
+      __SUB__->($gen->{ $k }, $ori->{ $k }); 
+    }
+  } else {
+    if ($gen =~ m/^\[/) {
+      equiv_expression($gen, $ori);
+    } else {
+      cmp_ok($gen, 'eq', $ori); 
+    }
+  } 
+};
+
 foreach my $file_name (@files) {
   diag($file_name);
   my $file = Path::Class::File->new($file_name);
@@ -71,7 +92,7 @@ foreach my $file_name (@files) {
     },
     name => $compare_str,
     type => $compare_str,
-    properties => $compare_deeply,
+    properties => $compare_recursive,
     apiVersion => $compare_str,
     location => $compare_str,
     dependsOn => $compare_deeply,
@@ -82,7 +103,7 @@ foreach my $file_name (@files) {
     sku => $compare_deeply,
     identity => $compare_deeply,
     plan => $compare_deeply,
-    tags => $compare_deeply,
+    tags => $compare_recursive,
     zones => sub {
       my ($gen, $ori) = @_;
       if (ref($gen) eq 'ARRAY') {
@@ -97,7 +118,7 @@ foreach my $file_name (@files) {
       my $i = 0;
       return if (not defined $gen and not defined $ori);
       foreach my $i (1..@$gen) {
-        is_deeply($gen->[$i], $ori->[$i]);
+        $compare_recursive->($gen->[$i], $ori->[$i]);
       }
     },
   };
