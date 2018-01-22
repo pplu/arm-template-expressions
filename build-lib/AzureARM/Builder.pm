@@ -140,16 +140,23 @@ package AzureARM::Builder::Resource {
     $self->resolve_path($self->resource_path);
   });
 
-  has objects => (is => 'ro', lazy => 1, isa => 'HashRef[AzureARM::Builder::Object]', default => sub { 
+  has objects => (is => 'ro', lazy => 1, isa => 'ArrayRef[AzureARM::Builder::Object]', default => sub { 
     my $self = shift;
     my $objects = {};
     $self->_scan_for_objects($objects);
-    return $objects;
+    return [ map { $objects->{ $_ } } sort keys %$objects ];
   });
 
-  sub _build_objects {
-    my ($self) = @_;
-    my $objects = {};
+  sub _scan_for_objects {
+    my ($self, $objects) = @_;
+
+    foreach my $prop_name ($self->property_list) {
+      my $prop = $self->property($prop_name);
+      use Data::Printer;
+      p $prop;
+      my $t = $prop->object_def;
+      $objects->{ $t->name } = $t if ($prop->is_object);
+    }
 
     return $objects;
   }

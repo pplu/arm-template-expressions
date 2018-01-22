@@ -1,3 +1,7 @@
+[% FOREACH object = c.objects %]
+package [% object.perl_package %];
+
+[% END %]
 package [% c.perl_package %];
   use Moose;
 
