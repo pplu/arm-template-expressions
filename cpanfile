@@ -10,6 +10,7 @@ on test => sub {
   requires 'Test::Exception';
   requires 'File::Find';
   requires 'Path::Class';
+  requires 'Module::Find';
 };
 
 on develop => sub {
