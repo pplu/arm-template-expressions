@@ -8,6 +8,7 @@ package AzureARM::Builder::Object {
 
   has schema => (is => 'ro', isa => 'JSONSchema::ObjectModel::Definition', required => 1);
   has name => (is => 'ro', isa => 'Str', required => 1);
+  has resource => (is => 'ro', isa => 'AzureARM::Builder::Resource', required => 1);
   has base_namespace => (is => 'ro', isa => 'ArrayRef[Str]', required => 1);
 
   has perl_package => (is => 'ro', isa => 'Str', lazy => 1, default => sub {
@@ -38,6 +39,7 @@ package AzureARM::Builder::Object {
         name => $property,
         schema => $self->schema->properties->{ $property },
         object => $self,
+        resource => $self->resource,
       );
     }
     return $props;
@@ -101,6 +103,7 @@ package AzureARM::Builder::Property {
       schema => $schema,
       name => $type_name,
       base_namespace => $self->resource->namespace,
+      resource => $self->resource,
     );
   });
 
