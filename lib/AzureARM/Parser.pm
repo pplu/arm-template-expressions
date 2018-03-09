@@ -183,7 +183,7 @@ package AzureARM::Parser {
   use Module::Runtime qw/require_module/;
   sub load_resource_class {
     my ($class, $type) = @_;
-    require_module($class);
+    require_module($type);
   }
 
   sub expression_or_value {
