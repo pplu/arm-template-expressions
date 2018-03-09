@@ -31,7 +31,8 @@ package AzureARM::Builder::Object {
     my $self = shift;
     my $props = {};
     foreach my $property (keys %{ $self->schema->properties }) {
-      my $required = grep { $_ eq $property } @{ $self->schema->required };
+      my $required = $self->schema->required // [];
+      my $required = grep { $_ eq $property } @{ $required };
       $props->{ $property } = AzureARM::Builder::Property->new(
         required => $required,
         name => $property,
