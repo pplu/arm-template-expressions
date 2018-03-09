@@ -120,6 +120,7 @@ package AzureARM::Builder::Property {
     }
 
     my $t = {
+      number => sub { 'Num' },
       string => sub { 'Str' },
       enum => sub { 'Str' },
       integer => sub { 'Int' },
