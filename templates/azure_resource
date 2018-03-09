@@ -1,5 +1,6 @@
 [% FOREACH object = c.objects %]
 package [% object.perl_package %];
+  use Moose;
 [% FOREACH name=object.property_list %]
   [%- p = object.property(name) %]
   has [% name %] => (is => 'ro', isa => '[% IF (p.can_be_expression) %]AzureARM::Expression::FirstLevel|[% END %][% p.perl_type %]'[% IF (p.required) %], required => 1[% END %]);
