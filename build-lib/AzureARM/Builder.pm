@@ -30,9 +30,9 @@ package AzureARM::Builder::Object {
   sub _build_properties {
     my $self = shift;
     my $props = {};
-    foreach my $property (keys %{ $self->schema->properties }) {
-      my $required = $self->schema->required // [];
-      my $required = grep { $_ eq $property } @{ $required };
+    foreach my $property (keys %{ $self->schema->properties // {} }) {
+      my $reqs = $self->schema->required // [];
+      my $required = grep { $_ eq $property } @$reqs;
       $props->{ $property } = AzureARM::Builder::Property->new(
         required => $required,
         name => $property,
@@ -199,8 +199,9 @@ package AzureARM::Builder::Resource {
   sub _build_properties {
     my $self = shift;
     my $props = {};
-    foreach my $property (keys %{ $self->schema->properties }) {
-      my $required = grep { $_ eq $property } @{ $self->schema->required };
+    foreach my $property (keys %{ $self->schema->properties // {} }) {
+      my $reqs = $self->schema->required // [];
+      my $required = grep { $_ eq $property } @$reqs;
       $props->{ $property } = AzureARM::Builder::Property->new(
         required => $required,
         name => $property,
