@@ -13,6 +13,12 @@ on test => sub {
 };
 
 on develop => sub {
+  requires 'Mojo::UserAgent::Cached';
+  requires 'MooseX::DataModel';
+  requires 'Throwable::Error';
+  requires 'Template';
+  requires 'File::Slurp';
+
   requires 'Dist::Zilla';
   requires 'Dist::Zilla::Plugin::Git::GatherDir';
   requires 'Dist::Zilla::Plugin::Git::Push';

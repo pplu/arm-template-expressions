@@ -9,6 +9,18 @@ package AzureARM::Value {
     return $self->Value;
   }
 }
+package AzureARM::Value::Number {
+  use Moose;
+  extends 'AzureARM::Value';
+  has '+Value' => (
+    isa => 'Num'
+  );
+
+  sub as_hashref {
+    my $self = shift;
+    return $self->Value;
+  }
+}
 package AzureARM::Value::Integer {
   use Moose;
   extends 'AzureARM::Value';
@@ -51,7 +63,7 @@ package AzureARM::Value::Array {
 
   sub as_hashref {
     my $self = shift;
-    return [ map { $_->Value } @{ $self->Value } ];
+    return [ map { blessed($_) ? $_->as_hashref(@_) : $_->Value  } @{ $self->Value } ];
   }
 }
 package AzureARM::Expression {

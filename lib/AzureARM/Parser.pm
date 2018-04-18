@@ -16,6 +16,7 @@ package AzureARM::Parser {
   no warnings 'experimental::postderef';
   use AzureARM;
   use Parse::RecDescent;
+  use Scalar::Util qw/looks_like_number/;
 
   sub from_json {
     my ($class, $json) = @_;
@@ -129,62 +130,19 @@ package AzureARM::Parser {
       $resource->{ copy } = AzureARM::ResourceCopy->new($copy);
     }
 
-    $resource->{ sku }  = AzureARM::Value::Hash->new(Value => $resource->{ sku  }) if (defined $resource->{ sku  });
+    $resource->{ sku }  = AzureARM::Value::Hash->new(Value => $resource->{ sku }) if (defined $resource->{ sku });
     $resource->{ identity } = AzureARM::ResourceIdentity->new($resource->{ identity }) if (defined $resource->{ identity });
 
-    if (defined $resource->{ tags }) {
-      if (ref($resource->{ tags }) eq 'HASH') {
-        $resource->{ tags } = AzureARM::Value::Hash->new(Value => $resource->{ tags });
-      } else {
-        my $parsed = $self->parse_expression($resource->{ tags });
-        AzureARM::Parser::Exception->throw(path => "$path.properties", error => "Could not parse expression $resource->{tags}") if (not defined $parsed);
-        $resource->{ tags } = $parsed;
+    foreach my $key ('plan','properties','tags') {
+      if (defined $resource->{ $key }) {
+        $resource->{ $key } = $self->hash_or_expression($resource->{ $key }, "$path.$key");
       }
     }
-
-    if (defined $resource->{ plan }) {
-      if (ref($resource->{ plan }) eq 'HASH') {
-        $resource->{ plan } = AzureARM::Value::Hash->new(Value => $resource->{ plan });
-      } else {
-        my $parsed = $self->parse_expression($resource->{ plan });
-        AzureARM::Parser::Exception->throw(path => "$path.properties", error => "Could not parse expression $resource->{plan}") if (not defined $parsed);
-        $resource->{ plan } = $parsed;
+    foreach my $key ('zones') {
+      if (defined $resource->{ $key }) {
+        $resource->{ $key } = $self->array_or_expression($resource->{ $key }, "$path.$key");
       }
     }
-
-    if (defined $resource->{ zones }) {
-      if (ref($resource->{ zones }) eq 'ARRAY') {
-        my @vals = map { AzureARM::Value::String->new(Value => $_) } @{ $resource->{ zones } };
-        $resource->{ zones } = AzureARM::Value::Array->new(Value => \@vals);
-      } else {
-        my $parsed = $self->parse_expression($resource->{ zones });
-        AzureARM::Parser::Exception->throw(path => "$path.properties", error => "Could not parse expression $resource->{zones}") if (not defined $parsed);
-        $resource->{ zones } = $parsed;
-      }
-    }
-
-    if (defined $resource->{ resourceGroup }) {
-      my $parsed = $self->parse_expression($resource->{ resourceGroup });
-      $parsed = $resource->{ resourceGroup } if (not defined $parsed);
-      $resource->{ resourceGroup } = $parsed;
-    }
-
-    if (defined $resource->{ id }) {
-      my $parsed = $self->parse_expression($resource->{ id });
-      $parsed = $resource->{ id } if (not defined $parsed);
-      $resource->{ id } = $parsed;
-    }
-
-    if (defined $resource->{ properties }) {
-      if (ref($resource->{ properties }) eq 'HASH') {
-        $resource->{ properties } = AzureARM::Value::Hash->new(Value => $resource->{ properties });
-      } else {
-        my $parsed = $self->parse_expression($resource->{ properties });
-        AzureARM::Parser::Exception->throw(path => "$path.properties", error => "Could not parse expression $resource->{properties}") if (not defined $parsed);
-        $resource->{ properties } = $parsed;
-      }
-    }
-
     if (defined $resource->{ resources }) {
       if (ref($resource->{ resources }) eq 'ARRAY') {
         my $resources = [];
@@ -200,8 +158,76 @@ package AzureARM::Parser {
         $resource->{ resources } = $parsed;
       }
     }
-    
+ 
+    if (defined $resource->{ resourceGroup }) {
+      $resource->{ resourceGroup } = $self->expression_or_value($resource->{ resourceGroup });
+    }
+
+    if (defined $resource->{ id }) {
+      $resource->{ id } = $self->expression_or_value($resource->{ id });
+    }
+
     return AzureARM::Resource->new($resource);
+  }
+
+  sub expression_or_value {
+    my ($self, $expression, $path) = @_;
+    my $parsed = $self->parse_expression($expression, $path);
+    return $parsed if (defined $parsed);
+    return $self->scalar_to_value($expression, $path);
+  }
+  sub expression_or_fail {
+    my ($self, $expression, $path) = @_;
+    my $parsed = $self->parse_expression($expression);
+    return $parsed if (defined $parsed);
+    AzureARM::Parser::Exception->throw(
+      path => $path,
+      error => "Could not parse expression $expression"
+    );
+  }
+  sub scalar_to_value {
+    my ($self, $value, $path) = @_;
+   
+    if (not defined $value) {
+      return undef; 
+    } elsif (ref($value) eq 'HASH') {
+      $self->hash_or_expression($value, $path);
+    } elsif (ref($value) eq 'ARRAY') {
+      $self->array_or_expression($value, $path);
+    } elsif (ref($value) eq 'JSON::PP::Boolean') {
+      return 1 if ($value == 1);
+      return 0 if ($value == 0);
+    } elsif (blessed($value)) {
+      # if there is already a subclass of AzureARM::Value planted, just pass it back
+      return $value if ($value->isa('AzureARM::Value'));
+      die "Don't know how to handle a non-AzureARM::Value object";
+    } elsif (looks_like_number($value)) {
+      return AzureARM::Value::Integer->new(Value => $value) if ($value =~ m/^-?[0-9]+$/);
+      return AzureARM::Value::Number->new(Value => $value);
+    } else {
+      return AzureARM::Value::String->new(Value => $value);
+    }
+  }
+  sub hash_or_expression {
+    my ($self, $value, $path) = @_;
+    if (ref($value) eq 'HASH') {
+      return AzureARM::Value::Hash->new(
+        Value => { map { ($_ => $self->expression_or_value($value->{ $_ }, "$path.$_") ) } keys %$value }
+      );
+    } else {
+      return $self->expression_or_fail($value, $path);
+    }
+  }
+  sub array_or_expression {
+    my ($self, $value, $path) = @_;
+    if (ref($value) eq 'ARRAY') {
+      my $i = 0;
+      return AzureARM::Value::Array->new(
+        Value => [ map { $self->expression_or_value($_, "$path." . $i++) } @$value ],
+      );
+    } else {
+      return $self->expression_or_fail($value, $path);
+    }
   }
 
   sub parse_expression {
