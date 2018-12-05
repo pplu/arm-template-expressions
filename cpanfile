@@ -18,13 +18,4 @@ on develop => sub {
   requires 'Throwable::Error';
   requires 'Template';
   requires 'File::Slurp';
-
-  requires 'Dist::Zilla';
-  requires 'Dist::Zilla::Plugin::Git::GatherDir';
-  requires 'Dist::Zilla::Plugin::Git::Push';
-  requires 'Dist::Zilla::Plugin::Git::Tag';
-  requires 'Dist::Zilla::Plugin::Prereqs::FromCPANfile';
-  requires 'Dist::Zilla::Plugin::RunExtraTests';
-  requires 'Dist::Zilla::Plugin::VersionFromMainModule';
-  requires 'Dist::Zilla::PluginBundle::Git';
 };
