@@ -150,7 +150,7 @@ package AzureARM::Template::Parameter {
   use MooseX::StrictConstructor;
   use Moose::Util::TypeConstraints qw/enum/;
 
-  enum 'AzureARM::Parameter::Types', [qw/string String SecureString securestring int Int bool Bool object secureObject array/ ];
+  enum 'AzureARM::Parameter::Types', [qw/string String SecureString securestring int Int bool Bool object secureObject array Array/ ];
 
   has type => (is => 'ro', required => 1, isa => 'AzureARM::Parameter::Types');
   has defaultValue => (is => 'ro');
@@ -226,6 +226,7 @@ package AzureARM::Resource {
 
   has condition => (is => 'ro', isa => 'AzureARM::Expression::FirstLevel');
   has apiVersion => (is => 'ro', isa => 'Str', required => 1);
+  has subscriptionId => (is => 'ro', isa => 'Str');
   has type => (is => 'ro', isa => 'Str', required => 1);
   has name => (is => 'ro', isa => 'Str', required => 1);
   has location => (is => 'ro', isa => 'Str');
@@ -259,6 +260,7 @@ package AzureARM::Resource {
       apiVersion => $self->apiVersion,
       type => $self->type,
       name => $self->name,
+      (defined $self->subscriptionId)?(subscriptionId => $self->subcriptionId):(),
       (defined $self->location)?(location => $self->location):(),
       (defined $self->tags)?(tags => $self->tags->as_hashref):(),
       (defined $self->comments)?(comments => $self->comments):(),
