@@ -91,14 +91,13 @@ my $resource_compare = {
   apiVersion => \&compare_str,
   location => \&compare_str,
   dependsOn => sub {
-    my ($gen, $ori) = @_;
-print Dumper($gen, $ori);
+    my ($gen, $ori, $path) = @_;
     if (ref($gen) eq 'ARRAY') {
       for (my $i = 0; $i < scalar(@$gen); $i++) {
-        equiv_expression($gen->[ $i ], $ori->[ $i ], "DependsOn $i are equivalent");
+        equiv_expression($gen->[ $i ], $ori->[ $i ], "DependsOn $i are equivalent in $path.$i");
       }
     } else {
-      equiv_expression($gen, $ori, "DependsOn are equivalent");
+      equiv_expression($gen, $ori, "DependsOn are equivalent in $path");
     }
   },
   kind => \&compare_str,
@@ -131,6 +130,7 @@ sub compare_resources {
   my ($generated, $origin) = @_;
   ok(ref($generated) eq 'ARRAY');
   ok(ref($origin) eq 'ARRAY');
+  my $path = 'resources.';
 
   cmp_ok($generated->@*, '==', $origin->@*, 'Got the same resources once parsed');
   for (my $i=0; $i <= $generated->@*; $i++) {
@@ -141,7 +141,7 @@ sub compare_resources {
     cmp_ok(keys %$generated_r, '==', keys %$origin_r, "Equal number of attributes resource $i");
     foreach my $k (keys %$resource_compare) {
       next if (not defined $generated_r->{ $k } and not defined $origin_r->{ $k });
-      $resource_compare->{ $k }->($generated_r->{ $k }, $origin_r->{ $k });
+      $resource_compare->{ $k }->($generated_r->{ $k }, $origin_r->{ $k }, "$path$i");
       delete $seen->{ $k };
     }
     cmp_ok(keys %$seen, '==', 0, 'Compared all attributes ' . (join ',', keys %$seen));
