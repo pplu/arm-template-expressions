@@ -109,9 +109,17 @@ my $resource_compare = {
   plan => \&compare_deeply,
   tags => sub {
     my ($gen, $ori) = @_;
-    cmp_ok(scalar(keys %$gen), '==', scalar(keys %$ori), 'tags have the same number of keys');
-    foreach my $k (keys %$gen) {
-      compare_str($gen->{ $k }, $ori->{ $k });
+    if (ref($gen) ne ref($ori)) {
+      ok(0, 'Tags property is not the same');
+    }
+
+    if (ref($gen) eq 'HASH') {
+      cmp_ok(scalar(keys %$gen), '==', scalar(keys %$ori), 'tags have the same number of keys');
+      foreach my $k (keys %$gen) {
+        compare_str($gen->{ $k }, $ori->{ $k });
+      }
+    } else {
+      equiv_expression($gen, $ori, "Tag expressions are equivalent in tag");
     }
   },
   zones => sub {
