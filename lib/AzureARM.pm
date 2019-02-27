@@ -187,7 +187,7 @@ package AzureARM::ResourceCopy {
   use Moose;
   use MooseX::StrictConstructor;
   use Moose::Util::TypeConstraints qw/enum/;
-  enum 'AzureARM::ResourceCopy::Modes' => [ 'serial', 'parallel' ];
+  enum 'AzureARM::ResourceCopy::Modes' => [ 'serial', 'Serial', 'parallel' ];
   has name => (is => 'ro', isa => 'Str', required => 1);
   has count => (is => 'ro', isa => 'AzureARM::Expression::FirstLevel|AzureARM::Value::Integer', required => 1);
   has mode => (is => 'ro', isa => 'AzureARM::ResourceCopy::Modes');
@@ -207,7 +207,7 @@ package AzureARM::ResourceIdentity {
   use Moose;
   use MooseX::StrictConstructor;
   use Moose::Util::TypeConstraints qw/enum/;
-  enum 'AzureARM::ResourceIdentity::Types' => [ 'systemAssigned', 'SystemAssigned' ];
+  enum 'AzureARM::ResourceIdentity::Types' => [ 'systemAssigned', 'SystemAssigned', 'UserAssigned' ];
 
   has type => (is => 'ro', isa => 'AzureARM::ResourceIdentity::Types');
 
