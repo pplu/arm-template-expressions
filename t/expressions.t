@@ -168,5 +168,12 @@ my $arm = AzureARM::Parser->new;
   cmp_ok($exp->Parameters->[0]->Parameters->[2]->Value, 'eq', '');
 }
 
+{
+  my $expression = "[if(equals(length(parameters('availabilityZones')), 0), json('null'), array(variables('azArray')[mod(copyIndex(), variables('azArrayLength'))]))]";
+  note($expression);
+  my $exp = $arm->parse_expression($expression);
+  isa_ok($exp, 'AzureARM::Expression::FirstLevel');
+  cmp_ok($exp->as_string, 'eq', $expression);
+}
 
 done_testing;
