@@ -260,7 +260,7 @@ package AzureARM::Resource {
       apiVersion => $self->apiVersion,
       type => $self->type,
       name => $self->name,
-      (defined $self->subscriptionId)?(subscriptionId => $self->subcriptionId):(),
+      (defined $self->subscriptionId)?(subscriptionId => $self->subscriptionId):(),
       (defined $self->location)?(location => $self->location):(),
       (defined $self->tags)?(tags => $self->tags->as_hashref):(),
       (defined $self->comments)?(comments => $self->comments):(),
