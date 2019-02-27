@@ -143,7 +143,7 @@ sub compare_resources {
 }
 
 foreach my $file_name (@files) {
-  diag($file_name);
+  note($file_name);
   my $file = Path::Class::File->new($file_name);
   my $content = $file->slurp;
   my $origin = decode_json($content);

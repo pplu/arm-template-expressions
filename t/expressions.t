@@ -10,7 +10,7 @@ my $arm = AzureARM::Parser->new;
 
 {
   my $expression = "[variables('var1')]";
-  diag($expression);
+  note($expression);
   my $exp = $arm->parse_expression($expression);
   isa_ok($exp, 'AzureARM::Expression::FirstLevel');
   cmp_ok($exp->as_string, 'eq', $expression);
@@ -21,7 +21,7 @@ my $arm = AzureARM::Parser->new;
 
 {
   my $expression = "[concat(variables('var1'), '-POSTFIX')]";
-  diag($expression);
+  note($expression);
   my $exp = $arm->parse_expression($expression);
   isa_ok($exp, 'AzureARM::Expression::FirstLevel');
   cmp_ok($exp->as_string, 'eq', $expression);
@@ -37,7 +37,7 @@ my $arm = AzureARM::Parser->new;
 
 {
   my $expression = "[greaterOrEquals(parameters('firstInt'), parameters('secondInt'))]";
-  diag($expression);
+  note($expression);
   my $exp = $arm->parse_expression($expression);
   isa_ok($exp, 'AzureARM::Expression::FirstLevel');
   cmp_ok($exp->as_string, 'eq', $expression);
@@ -54,7 +54,7 @@ my $arm = AzureARM::Parser->new;
 
 {
   my $expression = "[createArray(1, 2, 3)]"; 
-  diag($expression);
+  note($expression);
   my $exp = $arm->parse_expression($expression);
   isa_ok($exp, 'AzureARM::Expression::FirstLevel');
   cmp_ok($exp->as_string, 'eq', $expression);
@@ -71,7 +71,7 @@ my $arm = AzureARM::Parser->new;
 
 {
   my $expression = "[subscription()]";
-  diag($expression);
+  note($expression);
   my $exp = $arm->parse_expression($expression);
   isa_ok($exp, 'AzureARM::Expression::FirstLevel');
   cmp_ok($exp->as_string, 'eq', $expression);
@@ -82,7 +82,7 @@ my $arm = AzureARM::Parser->new;
 
 {
   my $expression = "[subscription().subscriptionId]";
-  diag($expression);
+  note($expression);
   my $exp = $arm->parse_expression($expression);
   isa_ok($exp, 'AzureARM::Expression::FirstLevel');
   cmp_ok($exp->as_string, 'eq', $expression);
@@ -94,7 +94,7 @@ my $arm = AzureARM::Parser->new;
 
 {
   my $expression = "[resourceGroup().name]";
-  diag($expression);
+  note($expression);
   my $exp = $arm->parse_expression($expression);
   isa_ok($exp, 'AzureARM::Expression::FirstLevel');
   cmp_ok($exp->as_string, 'eq', $expression);
@@ -106,7 +106,7 @@ my $arm = AzureARM::Parser->new;
 
 {
   my $expression = "[reference('xxx').dnsSettings.fqdn]";
-  diag($expression);
+  note($expression);
   my $exp = $arm->parse_expression($expression);
   isa_ok($exp, 'AzureARM::Expression::FirstLevel');
   cmp_ok($exp->as_string, 'eq', $expression);
@@ -119,7 +119,7 @@ my $arm = AzureARM::Parser->new;
 
 {
   my $expression = "[reference('xxx').instanceView.statuses[0].message]";
-  diag($expression);
+  note($expression);
   my $exp = $arm->parse_expression($expression);
   isa_ok($exp, 'AzureARM::Expression::FirstLevel');
   cmp_ok($exp->as_string, 'eq', $expression);
@@ -132,7 +132,7 @@ my $arm = AzureARM::Parser->new;
 
 {
   my $expression = "[split(reference('xxx').instanceView.substatuses[0].message, '')[1]]";
-  diag($expression);
+  note($expression);
   my $exp = $arm->parse_expression($expression);
   isa_ok($exp, 'AzureARM::Expression::FirstLevel');
   cmp_ok($exp->as_string, 'eq', $expression);
@@ -143,7 +143,7 @@ my $arm = AzureARM::Parser->new;
 
 {
   my $expression = "[add(parameters('numberOfSubnets'), -1)]";
-  diag($expression);
+  note($expression);
   my $exp = $arm->parse_expression($expression);
   isa_ok($exp, 'AzureARM::Expression::FirstLevel');
   cmp_ok($exp->as_string, 'eq', $expression);
@@ -156,7 +156,7 @@ my $arm = AzureARM::Parser->new;
 
 {
   my $expression = "[empty(replace(parameters('agentGroupName'), ' ', ''))]";
-  diag($expression);
+  note($expression);
   my $exp = $arm->parse_expression($expression);
   isa_ok($exp, 'AzureARM::Expression::FirstLevel');
   cmp_ok($exp->as_string, 'eq', $expression);
