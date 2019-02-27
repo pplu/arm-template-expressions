@@ -131,7 +131,11 @@ package AzureARM::Parser {
     }
 
     $resource->{ sku }  = AzureARM::Value::Hash->new(Value => $resource->{ sku }) if (defined $resource->{ sku });
-    $resource->{ identity } = AzureARM::ResourceIdentity->new($resource->{ identity }) if (defined $resource->{ identity });
+
+    if (defined $resource->{ identity }) {
+      $resource->{ identity }->{ userAssignedIdentities } = AzureARM::Value::Hash->new(Value => $resource->{ identity }->{ userAssignedIdentities }) if (defined $resource->{ identity }->{ userAssignedIdentities });
+      $resource->{ identity } = AzureARM::ResourceIdentity->new($resource->{ identity });
+    }
 
     foreach my $key ('plan','properties','tags') {
       if (defined $resource->{ $key }) {
