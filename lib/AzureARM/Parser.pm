@@ -127,6 +127,11 @@ package AzureARM::Parser {
       $copy->{ count } = $self->parse_expression($original_count) if (defined $original_count);
       $copy->{ count } = AzureARM::Value::Integer->new(Value => $original_count) if (not defined $copy->{ count });
 
+      my $original_batchSize = $copy->{ batchSize };
+      $copy->{ batchSize } = $self->parse_expression($original_batchSize) if (defined $original_batchSize);
+      $copy->{ batchSize } = AzureARM::Value::Integer->new(Value => $original_batchSize) if (not defined $copy->{ batchSize } and defined $original_batchSize);
+
+
       $resource->{ copy } = AzureARM::ResourceCopy->new($copy);
     }
 
