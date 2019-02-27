@@ -210,6 +210,7 @@ package AzureARM::ResourceIdentity {
   enum 'AzureARM::ResourceIdentity::Types' => [ 'systemAssigned', 'SystemAssigned' ];
 
   has type => (is => 'ro', isa => 'AzureARM::ResourceIdentity::Types');
+  has userAssignedIdentities => (is => 'ro', isa => 'AzureARM::Value::Hash');
 
   sub as_hashref {
     my $self = shift;
