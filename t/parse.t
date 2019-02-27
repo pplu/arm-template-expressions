@@ -108,7 +108,13 @@ print Dumper($gen, $ori);
   sku => \&compare_deeply,
   identity => \&compare_deeply,
   plan => \&compare_deeply,
-  tags => \&compare_deeply,
+  tags => sub {
+    my ($gen, $ori) = @_;
+    cmp_ok(scalar(keys %$gen), '==', scalar(keys %$ori), 'tags have the same number of keys');
+    foreach my $k (keys %$gen) {
+      compare_str($gen->{ $k }, $ori->{ $k });
+    }
+  },
   zones => sub {
     my ($gen, $ori) = @_;
     if (ref($gen) eq 'ARRAY') {
@@ -124,7 +130,7 @@ print Dumper($gen, $ori);
 sub compare_resources {
   my ($generated, $origin) = @_;
   ok(ref($generated) eq 'ARRAY');
-  ok(ref($generated) eq 'ARRAY');
+  ok(ref($origin) eq 'ARRAY');
 
   cmp_ok($generated->@*, '==', $origin->@*, 'Got the same resources once parsed');
   for (my $i=0; $i <= $generated->@*; $i++) {
