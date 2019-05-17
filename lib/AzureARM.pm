@@ -191,7 +191,7 @@ package AzureARM::ResourceCopy {
   has name => (is => 'ro', isa => 'Str', required => 1);
   has count => (is => 'ro', isa => 'AzureARM::Expression::FirstLevel|AzureARM::Value::Integer', required => 1);
   has mode => (is => 'ro', isa => 'AzureARM::ResourceCopy::Modes');
-  has batchSize => (is => 'ro', isa => 'AzureARM::Value::Integer');
+  has batchSize => (is => 'ro', isa => 'Int');
 
   sub as_hashref {
     my $self = shift;
