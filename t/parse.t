@@ -85,6 +85,7 @@ my $resource_compare = {
     compare_str($gen->{mode}, $ori->{mode});
     compare_str($gen->{batchSize}, $ori->{batchSize});
   },
+  subscriptionId => \&compare_str,
   name => \&compare_str,
   type => \&compare_str,
   properties => \&compare_properties,
@@ -152,7 +153,7 @@ sub compare_resources {
       $resource_compare->{ $k }->($generated_r->{ $k }, $origin_r->{ $k }, "$path$i");
       delete $seen->{ $k };
     }
-    cmp_ok(keys %$seen, '==', 0, 'Compared all attributes ' . (join ',', keys %$seen));
+    cmp_ok(keys %$seen, '==', 0, "Compared all attributes on $path$i Leftover:" . (join ',', keys %$seen));
   }
 }
 

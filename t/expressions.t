@@ -168,5 +168,20 @@ my $arm = AzureARM::Parser->new;
   cmp_ok($exp->Parameters->[0]->Parameters->[2]->Value, 'eq', '');
 }
 
+{
+  my $expression = "[subscription().subscriptionId]";
+  note($expression);
+  my $exp = $arm->parse_expression($expression);
+  isa_ok($exp, 'AzureARM::Expression::FirstLevel');
+  cmp_ok($exp->as_string, 'eq', $expression);
+  $exp = $exp->Value;
+  isa_ok($exp, 'AzureARM::Expression::AccessProperty');
+  cmp_ok($exp->Properties->[0], 'eq', '.subscriptionId');
+  isa_ok($exp->On, 'AzureARM::Expression::Function');
+  cmp_ok($exp->On->Function, 'eq', 'subscription');
+  is_deeply($exp->On->Parameters, []);
+}
+
+
 
 done_testing;
